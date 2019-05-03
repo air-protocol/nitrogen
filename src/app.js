@@ -13,6 +13,7 @@ const hostConfiguration = require('./config/config')
 const localCache = flatCache.load('localCache')
 
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
+console.log("ADDRESS: " + thisAddress)
 
 const getDirectoryFromBootNode = (clientio, hostAddress) => {
     let promise = new Promise((resolve, reject) => {
