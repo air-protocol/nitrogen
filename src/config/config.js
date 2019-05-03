@@ -1,8 +1,10 @@
+const argv = require('yargs').argv
+
 const hostConfig = {
     bootNodes : ['127.0.0.1:4000'],
-    address : process.env.ADDRESS || '127.0.0.1',
-    bootNode: process.env.BOOTNODE || false,
-    port : process.env.PORT || 4020,
+    address : argv.address || '127.0.0.1',
+    bootNode: argv.bootNode || false,
+    port : argv.port || 4020,
     outboundCount: 3
 }
 module.exports = hostConfig
