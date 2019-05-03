@@ -96,10 +96,25 @@ const connectToPeers = async (clientio, bootNodes) => {
 }
 
 connectToPeers(clientio, hostConfiguration.bootNodes).then(() => { console.log('peers connected') }).catch((e) => {
-    console.log('Unable to locate a directory of peer nodes')
-    server.close()
+    if (!hostConfiguration.bootNode) {
+        console.log('Unable to locate a directory of peer nodes')
+        server.close()
+    }
 })
 
 server.listen(hostConfiguration.port, hostConfiguration.address, () => {
-    //TODO
+
+    server.on('connection', (socket) => {
+        let peerAddress = socket.address().address + ':' + socket.address().port
+        if (!directory.includes(peerAddress)) {
+            directory.push(peerAddress)
+            flatCache.setKey('directory', directory)
+        }
+
+        //Add message handlers
+        socket.on('directory', (message) => {
+            socket.emit('directoryCast', directory)
+        })
+    })
+
 })
