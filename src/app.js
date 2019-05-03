@@ -16,13 +16,15 @@ const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 const getDirectoryFromBootNode = (clientio, hostAddress) => {
     let promise = new Promise((resolve, reject) => {
-        let outboundSocket = clientio.connect(path.join('http://', hostAddress), { forcenew: true })
+        let hostPath = 'http://' + hostAddress
+        let outboundSocket = clientio.connect(hostPath, { forcenew: true })
+        console.log('attempt to connect to: ' + hostPath)
         outboundSocket.on('connection', (socket) => {
             socket.emit('directory')
         })
 
         outboundSocket.on('connect_error', (error) => {
-            reject('unable to connect')
+            reject('unable to connect: ' + error)
         })
 
         outboundSocket.on('directoryCast', (hostDirectory) => {
@@ -104,11 +106,15 @@ connectToPeers(clientio, hostConfiguration.bootNodes).then(() => { console.log('
 
 server.listen(hostConfiguration.port, hostConfiguration.address, () => {
 
+    console.log('listening: ' + hostConfiguration.port)
+    console.log('listen address: ' + server.address().address + ':' + server.address().port)
     server.on('connection', (socket) => {
         let peerAddress = socket.address().address + ':' + socket.address().port
-        if (!directory.includes(peerAddress)) {
+        let directory = localCache.getKey('directory')
+        console.log('peer connected: ' + peerAddress)
+        if ((directory !== undefined) && (!directory.includes(peerAddress))) {
             directory.push(peerAddress)
-            flatCache.setKey('directory', directory)
+            localCache.setKey('directory', directory)
         }
 
         //Add message handlers
