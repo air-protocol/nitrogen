@@ -12,6 +12,8 @@ const serverSocket = serverio(server)
 const hostConfiguration = require('./config/config')
 const localCache = flatCache.load('localCache')
 
+const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
+
 const getDirectoryFromBootNode = (clientio, hostAddress) => {
     let promise = new Promise((resolve, reject) => {
         let outboundSocket = clientio.connect(path.join('http://', hostAddress), { forcenew: true })
@@ -80,10 +82,12 @@ const connectToPeers = async (clientio, bootNodes) => {
         localCache.save()
     }
 
+    let peerDirectory = directory.filter((address) => { address !== thisAddress })
+
     while (peers.length < hostConfiguration.outboundCount) {
-        let peerIndex = Math.floor(Math.random() * directory.length) + 1
+        let peerIndex = Math.floor(Math.random() * peerDirectory.length) + 1
         try {
-            let peer = await connectToPeer(clientio, directory[peerIndex])
+            let peer = await connectToPeer(clientio, peerDirectory[peerIndex])
             peers.push(peer)
         } catch (e) {
             //noop
@@ -96,4 +100,6 @@ connectToPeers(clientio, hostConfiguration.bootNodes).then(() => { console.log('
     server.close()
 })
 
-server.listen(hostConfiguration.port)
+server.listen(hostConfiguration.port, hostConfiguration.address, () => {
+    //TODO
+})
