@@ -108,8 +108,8 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
 
     console.log('listening: ' + hostConfiguration.port)
     console.log('listen address: ' + server.address().address + ':' + server.address().port)
-    server.on('connection', (socket) => {
-        let peerAddress = socket.address().address + ':' + socket.address().port
+    serverSocket.sockets.on('connection', (socket) => {
+        let peerAddress = socket.request.connection.remoteAddress + ':' + socket.request.connection.remotePort
         let directory = localCache.getKey('directory')
         console.log('peer connected: ' + peerAddress)
         if ((directory !== undefined) && (!directory.includes(peerAddress))) {
