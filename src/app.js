@@ -19,18 +19,22 @@ const getDirectoryFromBootNode = (clientio, hostAddress) => {
         let hostPath = 'http://' + hostAddress
         let outboundSocket = clientio.connect(hostPath, { forcenew: true })
         console.log('attempt to connect to: ' + hostPath)
-        outboundSocket.on('connection', (socket) => {
-            socket.emit('directory')
+        outboundSocket.on('connect', (socket) => {
+            console.log('requesting directory')
+            outboundSocket.emit('directory')
+
+        })
+
+        outboundSocket.on('directoryCast', (hostDirectory) => {
+            console.log('directory received: ' + hostDirectory)
+            outboundSocket.close()
+            resolve(hostDirectory)
         })
 
         outboundSocket.on('connect_error', (error) => {
             reject('unable to connect: ' + error)
         })
 
-        outboundSocket.on('directoryCast', (hostDirectory) => {
-            outboundSocket.close()
-            resolve(hostDirectory)
-        })
         setTimeout(() => {
             reject('boot node timeout')
         }, 5000)
@@ -41,6 +45,9 @@ const getDirectoryFromBootNode = (clientio, hostAddress) => {
 const getDirectoryFromBootNodes = async (clientio, bootNodes) => {
     for (let i = 0; i < bootNodes.length; i++) {
         try {
+            if (bootNodes[i] === thisAddress) {
+                continue
+            }
             directory = await getDirectoryFromBootNode(clientio, bootNodes[i])
         } catch (e) {
             console.log(e)
@@ -55,9 +62,11 @@ const getDirectoryFromBootNodes = async (clientio, bootNodes) => {
 const connectToPeer = (clientio, peerAddress) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect(path.join('http://', peerAddress), { forcenew: true })
-        peerSocket.on('connection', (socket) => {
-            resolve(peerSocket)
+        peerSocket.on('connect', (socket) => {
             //add message handlers
+            console.log('sending addme message')
+            peerSocket.emit('addMe', thisAddress)
+            resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
             reject('unable to connect to peer')
@@ -73,11 +82,11 @@ const connectToPeers = async (clientio, bootNodes) => {
     let peers = []
 
     let directory = localCache.getKey('directory')
-    if (directory === undefined) {
+    if (!directory) {
         directory = await getDirectoryFromBootNodes(clientio, bootNodes)
     }
 
-    if (directory === undefined) {
+    if (!directory) {
         reject('directory is unavailable')
     } else {
         localCache.setKey('directory', directory)
@@ -86,7 +95,7 @@ const connectToPeers = async (clientio, bootNodes) => {
 
     let peerDirectory = directory.filter((address) => { address !== thisAddress })
 
-    while (peers.length < hostConfiguration.outboundCount) {
+    while (peerDirectory.length && peers.length < hostConfiguration.outboundCount) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length) + 1
         try {
             let peer = await connectToPeer(clientio, peerDirectory[peerIndex])
@@ -94,12 +103,13 @@ const connectToPeers = async (clientio, bootNodes) => {
         } catch (e) {
             //noop
         }
+        peerDirectory = directory.filter((address) => { address !== peerDirectory[peerIndex] })
     }
 }
 
 connectToPeers(clientio, hostConfiguration.bootNodes).then(() => { console.log('peers connected') }).catch((e) => {
     if (!hostConfiguration.bootNode) {
-        console.log('Unable to locate a directory of peer nodes')
+        console.log('Unable to locate a directory of peer nodes: ' + e)
         server.close()
     }
 })
@@ -109,18 +119,26 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
     console.log('listening: ' + hostConfiguration.port)
     console.log('listen address: ' + server.address().address + ':' + server.address().port)
     serverSocket.sockets.on('connection', (socket) => {
-        let peerAddress = socket.request.connection.remoteAddress + ':' + socket.request.connection.remotePort
-        let directory = localCache.getKey('directory')
-        console.log('peer connected: ' + peerAddress)
-        if ((directory !== undefined) && (!directory.includes(peerAddress))) {
-            directory.push(peerAddress)
-            localCache.setKey('directory', directory)
-        }
+        console.log('connection made')
 
         //Add message handlers
         socket.on('directory', (message) => {
+            let directory = localCache.getKey('directory')
+            if (hostConfiguration.bootNode && (!directory)) {
+                directory = hostConfiguration.bootNodes
+            }
+            console.log('sending directory: ' + directory)
             socket.emit('directoryCast', directory)
         })
-    })
 
+        socket.on('addMe', (peerAddress) => {
+            //let directory = localCache.getKey('directory')
+            /* if ((directory !== undefined) && (!directory.includes(peerAddress))) {
+                directory.push(peerAddress)
+                localCache.setKey('directory', directory)
+                localCache.save()
+            } */
+            console.log('discovered peer: ' + peerAddress)
+        })
+    })
 })
