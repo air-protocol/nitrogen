@@ -14,7 +14,8 @@
     "express": "^4.16.4",
     "flat-cache": "^2.0.1",
     "socket.io": "^2.2.0",
-    "socket.io-client": "^2.2.0"
+    "socket.io-client": "^2.2.0",
+    "yargs": "^13.2.2"
   },
   "devDependencies": {
     "nodemon": "^1.19.0"
