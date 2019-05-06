@@ -61,7 +61,7 @@ const getDirectoryFromBootNodes = async (clientio, bootNodes) => {
 
 const connectToPeer = (clientio, peerAddress) => {
     let promise = new Promise((resolve, reject) => {
-        let peerSocket = clientio.connect(path.join('http://', peerAddress), { forcenew: true })
+        let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
             //add message handlers
             console.log('sending addme message')
@@ -69,7 +69,7 @@ const connectToPeer = (clientio, peerAddress) => {
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
-            reject('unable to connect to peer')
+            reject('unable to connect to peer: ' + error)
         })
         setTimeout(() => {
             reject('peer timeout')
@@ -93,15 +93,15 @@ const connectToPeers = async (clientio, bootNodes) => {
         localCache.save()
     }
 
-    let peerDirectory = directory.filter((address) => { address !== thisAddress })
+    let peerDirectory = directory.filter(address => address !== thisAddress)
 
-    while (peerDirectory.length && peers.length < hostConfiguration.outboundCount) {
-        let peerIndex = Math.floor(Math.random() * peerDirectory.length) + 1
+    while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
+        let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
             let peer = await connectToPeer(clientio, peerDirectory[peerIndex])
             peers.push(peer)
         } catch (e) {
-            //noop
+            console.log('error connecting to peer: ' + e)
         }
         peerDirectory = directory.filter((address) => { address !== peerDirectory[peerIndex] })
     }
@@ -132,12 +132,12 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         })
 
         socket.on('addMe', (peerAddress) => {
-            //let directory = localCache.getKey('directory')
-            /* if ((directory !== undefined) && (!directory.includes(peerAddress))) {
+            let directory = localCache.getKey('directory')
+            if ((directory !== undefined) && (!directory.includes(peerAddress))) {
                 directory.push(peerAddress)
                 localCache.setKey('directory', directory)
                 localCache.save()
-            } */
+            }
             console.log('discovered peer: ' + peerAddress)
         })
     })
