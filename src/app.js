@@ -103,7 +103,7 @@ const connectToPeers = async (clientio, bootNodes) => {
         } catch (e) {
             console.log('error connecting to peer: ' + e)
         }
-        peerDirectory = directory.filter((address) => { address !== peerDirectory[peerIndex] })
+        peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
 }
 
