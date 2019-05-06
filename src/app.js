@@ -45,9 +45,6 @@ const getDirectoryFromBootNode = (clientio, hostAddress) => {
 const getDirectoryFromBootNodes = async (clientio, bootNodes) => {
     for (let i = 0; i < bootNodes.length; i++) {
         try {
-            if (bootNodes[i] === thisAddress) {
-                continue
-            }
             directory = await getDirectoryFromBootNode(clientio, bootNodes[i])
         } catch (e) {
             console.log(e)
@@ -107,7 +104,7 @@ const connectToPeers = async (clientio, bootNodes) => {
     }
 }
 
-connectToPeers(clientio, hostConfiguration.bootNodes).then(() => { console.log('peers connected') }).catch((e) => {
+connectToPeers(clientio, hostConfiguration.bootNodes.filter(address => address !== thisAddress)).then(() => { console.log('peers connected') }).catch((e) => {
     if (!hostConfiguration.bootNode) {
         console.log('Unable to locate a directory of peer nodes: ' + e)
         server.close()
