@@ -75,7 +75,7 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
             console.log('sending addme message')
-            peerSocket.emit('addMe', { 'address': thisAddress, 'uuid': addMeUUID })
+            peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -150,7 +150,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
             if (peerMessage.address === thisAddress) {
                 return
             }
-            if (!messageSeen(peerMessage.uuid)) {
+            if (!messageSeen(peerMessage.uuid) && peerMessage.addMeTTL--) {
                 socket.broadcast.emit('addMe', peerMessage)
                 let directory = localCache.getKey('directory')
                 if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
@@ -160,6 +160,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
                 }
                 console.log('message UUIDs: ' + messageUUIDs)
             }
+            console.log('time to live for: ' + peerMessage.address + ' = ' + peerMessage.addMeTTL)
             console.log('add me received for: ' + peerMessage.address)
         })
     })
