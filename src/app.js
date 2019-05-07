@@ -4,6 +4,7 @@ const serverio = require('socket.io')
 const clientio = require('socket.io-client')
 const path = require('path')
 const flatCache = require('flat-cache')
+const uuid = require('uuid')
 
 const app = express()
 const server = http.createServer(app)
@@ -13,6 +14,19 @@ const hostConfiguration = require('./config/config')
 const localCache = flatCache.load('localCache')
 
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
+
+let messageUUIDs = []
+
+const messageSeen = (messageUUID) => {
+    if (!messageUUIDs.includes(messageUUID)) {
+        if (messageUUIDs.length >= hostConfiguration.maxMessageStore) {
+            messageUUIDs.shift()
+        }
+        messageUUIDs.push(messageUUID)
+        return false
+    }
+    return true
+}
 
 const getDirectoryFromBootNode = (clientio, hostAddress) => {
     let promise = new Promise((resolve, reject) => {
@@ -56,17 +70,20 @@ const getDirectoryFromBootNodes = async (clientio, bootNodes) => {
     return directory
 }
 
-const connectToPeer = (clientio, peerAddress) => {
+const connectToPeer = (clientio, peerAddress, addMeUUID) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
-            //add message handlers
             console.log('sending addme message')
-            peerSocket.emit('addMe', thisAddress)
+            peerSocket.emit('addMe', { 'address': thisAddress, 'uuid': addMeUUID })
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
             reject('unable to connect to peer: ' + error)
+        })
+        peerSocket.on('disconnect', (socket) => {
+            //TODO make a story for replacing peers
+            console.log('disconnected: ' + peerAddress)
         })
         setTimeout(() => {
             reject('peer timeout')
@@ -77,6 +94,7 @@ const connectToPeer = (clientio, peerAddress) => {
 
 const connectToPeers = async (clientio, bootNodes) => {
     let peers = []
+    let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -95,7 +113,7 @@ const connectToPeers = async (clientio, bootNodes) => {
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await connectToPeer(clientio, peerDirectory[peerIndex])
+            let peer = await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID)
             peers.push(peer)
         } catch (e) {
             console.log('error connecting to peer: ' + e)
@@ -128,14 +146,21 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
             socket.emit('directoryCast', directory)
         })
 
-        socket.on('addMe', (peerAddress) => {
-            let directory = localCache.getKey('directory')
-            if ((directory !== undefined) && (!directory.includes(peerAddress))) {
-                directory.push(peerAddress)
-                localCache.setKey('directory', directory)
-                localCache.save()
+        socket.on('addMe', (peerMessage) => {
+            if (peerMessage.address === thisAddress) {
+                return
             }
-            console.log('discovered peer: ' + peerAddress)
+            if (!messageSeen(peerMessage.uuid)) {
+                socket.broadcast.emit('addMe', peerMessage)
+                let directory = localCache.getKey('directory')
+                if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
+                    directory.push(peerMessage.address)
+                    localCache.setKey('directory', directory)
+                    localCache.save()
+                }
+                console.log('message UUIDs: ' + messageUUIDs)
+            }
+            console.log('add me received for: ' + peerMessage.address)
         })
     })
 })
