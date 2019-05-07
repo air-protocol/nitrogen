@@ -15,6 +15,11 @@ const localCache = flatCache.load('localCache')
 
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
+if(hostConfiguration.refreshDirectory) {
+    localCache.removeKey('directory')
+    localCache.save()
+}
+
 let messageUUIDs = []
 
 const messageSeen = (messageUUID) => {
