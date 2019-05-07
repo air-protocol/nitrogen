@@ -70,12 +70,12 @@ const getDirectoryFromBootNodes = async (clientio, bootNodes) => {
     return directory
 }
 
-const connectToPeer = (clientio, peerAddress, addMeUUID) => {
+const connectToPeer = (clientio, peerAddress, addMeUUID, ttl) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
             console.log('sending addme message')
-            peerSocket.emit('addMe', { 'address': thisAddress, 'uuid': addMeUUID })
+            peerSocket.emit('addMe', { 'address': thisAddress, 'ttl': ttl, 'uuid': addMeUUID })
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -95,6 +95,7 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
 const connectToPeers = async (clientio, bootNodes) => {
     let peers = []
     let addMeUUID = uuid()
+    let ttl = hostConfiguration.ttl
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -113,7 +114,7 @@ const connectToPeers = async (clientio, bootNodes) => {
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID)
+            let peer = await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID, ttl)
             peers.push(peer)
         } catch (e) {
             console.log('error connecting to peer: ' + e)
@@ -150,7 +151,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
             if (peerMessage.address === thisAddress) {
                 return
             }
-            if (!messageSeen(peerMessage.uuid)) {
+            if (!messageSeen(peerMessage.uuid) && peerMessage.ttl--) {
                 socket.broadcast.emit('addMe', peerMessage)
                 let directory = localCache.getKey('directory')
                 if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
@@ -160,6 +161,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
                 }
                 console.log('message UUIDs: ' + messageUUIDs)
             }
+            console.log('time to live for: ' + peerMessage.address + ' = ' + peerMessage.ttl)
             console.log('add me received for: ' + peerMessage.address)
         })
     })
