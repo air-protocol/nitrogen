@@ -90,6 +90,21 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
             //TODO make a story for replacing peers
             console.log('disconnected: ' + peerAddress)
         })
+        peerSocket.on('addMe', (peerMessage) => {
+            if (peerMessage.address === thisAddress) {
+                return
+            }
+            if (!messageSeen(peerMessage.uuid) && peerMessage.addMeTTL--) {
+                serverSocket.emit('addMe', peerMessage)
+                let directory = localCache.getKey('directory')
+                if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
+                    directory.push(peerMessage.address)
+                    localCache.setKey('directory', directory)
+                    localCache.save()
+                }
+            }
+            console.log('add me received on client for: ' + peerMessage.address)
+        })
         setTimeout(() => {
             reject('peer timeout')
         }, 5000)
@@ -163,9 +178,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
                     localCache.setKey('directory', directory)
                     localCache.save()
                 }
-                console.log('message UUIDs: ' + messageUUIDs)
             }
-            console.log('time to live for: ' + peerMessage.address + ' = ' + peerMessage.addMeTTL)
             console.log('add me received for: ' + peerMessage.address)
         })
     })
