@@ -38,7 +38,7 @@ const connectToPeers = async (clientio, bootNodes) => {
     }
 
     if (!directory) {
-        reject('directory is unavailable')
+        throw('directory is unavailable')
     } else {
         localCache.setKey('directory', directory)
         localCache.save()

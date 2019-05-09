@@ -5,7 +5,6 @@ const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 let messageUUIDs = []
 
 const serverSocket = require('./server').serverSocket
-console.log('the server socket is: ' + serverSocket)
 
 const messageSeen = (messageUUID) => {
     if (!messageUUIDs.includes(messageUUID)) {
