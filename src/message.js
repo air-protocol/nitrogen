@@ -17,6 +17,14 @@ const messageSeen = (messageUUID) => {
     return true
 }
 
+const pongHandler = (peerMessage) => {
+    console.log('heard pong: ' + peerMessage.message + ' uuid: ' + peerMessage.uuid)
+    if (!messageSeen(peerMessage.uuid)) {
+        console.log ('sending pong on')
+        serverSocket.emit('testPong', peerMessage)
+    }
+}
+
 const addMeHandler = (peerMessage) => {
     if (peerMessage.address === thisAddress) {
         return
@@ -33,4 +41,4 @@ const addMeHandler = (peerMessage) => {
     console.log('add me for: ' + peerMessage.address)
 }
 
-module.exports = { addMeHandler }
+module.exports = { addMeHandler, pongHandler }

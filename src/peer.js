@@ -1,9 +1,11 @@
 const uuid = require('uuid')
 const localCache = require('./cache')
-const { addMeHandler } = require('./message')
+const { addMeHandler, pongHandler } = require('./message')
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
+
+const serverSocket = require('./server').serverSocket
 
 const connectToPeer = (clientio, peerAddress, addMeUUID) => {
     let promise = new Promise((resolve, reject) => {
@@ -11,6 +13,8 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
         peerSocket.on('connect', (socket) => {
             console.log('sending addme message')
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
+            peerSocket.on('addMe', addMeHandler)
+            peerSocket.on('testPong', pongHandler)
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -20,7 +24,6 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
             //TODO make a story for replacing peers
             console.log('disconnected: ' + peerAddress)
         })
-        peerSocket.on('addMe', addMeHandler)
         setTimeout(() => {
             reject('peer timeout')
         }, 5000)
@@ -38,7 +41,7 @@ const connectToPeers = async (clientio, bootNodes) => {
     }
 
     if (!directory) {
-        throw('directory is unavailable')
+        throw ('directory is unavailable')
     } else {
         localCache.setKey('directory', directory)
         localCache.save()
