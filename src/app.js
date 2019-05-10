@@ -37,7 +37,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
             socket.emit('directoryCast', directory)
         })
 
-        socket.on('testPing', pongHandler)
+        socket.on('testPong', pongHandler)
         socket.on('addMe', addMeHandler)
     })
 })
