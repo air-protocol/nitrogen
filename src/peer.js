@@ -14,7 +14,7 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
             console.log('sending addme message')
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
             peerSocket.on('addMe', addMeHandler)
-            peerSocket.on('testPong', pongHandler)
+            peerSocket.on('testPing', pongHandler)
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {

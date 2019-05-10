@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "consumer": "node src/consumer.js",
     "test": "jest",
     "dev": "nodemon src/app.js"
   },
