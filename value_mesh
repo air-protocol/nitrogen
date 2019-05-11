@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+set -eufo pipefail
+IFS=$'\n\t'
+
+declare -r _VALUE_MESH_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+declare -r _command="$0"
+declare -i _arg_idx=0
+declare -i _arg_count=$#
+declare -ra _args=("$@")
+
+function peek() {
+    echo "${_args+${_args[${_arg_idx}]}}"
+}
+
+function consume() {
+    ((_arg_idx++))
+    true
+}
+
+function end_of_args?() {
+    ((_arg_idx==_arg_count))
+}
+
+function expected() {
+    echo -n "${_command}"
+    local -i idx=0
+    for ((idx=0;idx<_arg_idx;idx++)); do
+        echo -n " ${_args[${idx}]}"
+    done
+    echo -n ' .'
+    for ((idx=_arg_idx;idx<_arg_count;idx++)); do
+        echo -n " ${_args[${idx}]}"
+    done
+    echo
+    ( IFS="|"; echo "expected: $*")
+}
+
+function get-credentials() {
+    consume
+    gcloud container clusters get-credentials value-mesh --zone us-central1-a --project peer2peerpoc
+}
+
+function build() {
+    consume
+    local -r version=$(cat "${_VALUE_MESH_DIR}/package.json" | jq -r '.version')
+    local -r image="us.gcr.io/peer2peerpoc/value_mesh:${version}"
+
+    # Check if the image exists.
+    if gcloud container images describe "${image}" > /dev/null 2>&1; then
+        echo "ERROR: An image for version ${version} already exists" >&2
+        exit 1
+    fi
+
+    docker build -f "${_VALUE_MESH_DIR}/Dockerfile" "${_VALUE_MESH_DIR}" -t "${image}"
+}
+
+function push() {
+    consume
+    local -r version=$(cat "${_VALUE_MESH_DIR}/package.json" | jq -r '.version')
+    local -r image="us.gcr.io/peer2peerpoc/value_mesh:${version}"
+
+    # Check if the image exists.
+    if gcloud container images describe "${image}" > /dev/null 2>&1; then
+        echo "ERROR: An image for version ${version} already exists" >&2
+        exit 1
+    fi
+
+    docker push "${image}"
+}
+
+function deploy() {
+    consume
+    local -r version=$(cat "${_VALUE_MESH_DIR}/package.json" | jq -r '.version')
+    local -r image="us.gcr.io/peer2peerpoc/value_mesh:${version}"
+    local verb
+
+    if kubectl get deployment bootnode > /dev/null 2>&1; then
+        verb=replace
+    else
+        verb=create
+    fi
+
+    cat "${_VALUE_MESH_DIR}/infrastructure/bootnode_deployment.yaml" |
+        sed -e "s@{IMAGE}@${image}@g" |
+        kubectl "${verb}" -f -
+
+    if kubectl get service bootnode > /dev/null 2>&1; then
+        verb=apply
+    else
+        verb=create
+    fi
+
+    cat "${_VALUE_MESH_DIR}/infrastructure/bootnode_service.yaml" |
+        kubectl "${verb}" -f -
+
+    if kubectl get deployment peernode > /dev/null 2>&1; then
+        verb=replace
+    else
+        verb=create
+    fi
+
+    cat "${_VALUE_MESH_DIR}/infrastructure/peernode_deployment.yaml" |
+        sed -e "s@{IMAGE}@${image}@g" |
+        kubectl "${verb}" -f -
+
+    if kubectl get service peernode > /dev/null 2>&1; then
+        verb=apply
+    else
+        verb=create
+    fi
+
+    cat "${_VALUE_MESH_DIR}/infrastructure/peernode_service.yaml" |
+        kubectl "${verb}" -f -
+
+
+    echo "Deploy the ingress"
+}
+
+function top() {
+    local -r token=$(peek)
+
+    case "${token}" in
+        get-credentials)
+            get-credentials
+            ;;
+        build)
+            build
+            ;;
+        push)
+            push
+            ;;
+        deploy)
+            deploy
+            ;;
+        *)
+            expected get-credentials build push deploy >&2
+            exit 1
+            ;;
+    esac
+
+    if ! end_of_args?; then
+        expected 'end of arguments' >&2
+        exit 1
+    fi
+}
+
+top
