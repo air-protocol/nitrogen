@@ -7,8 +7,6 @@ const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 const serverSocket = require('./server').serverSocket
 
-let peers = []
-
 const connectToPeer = (clientio, peerAddress, addMeUUID) => {
     console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
@@ -35,6 +33,7 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
 }
 
 const connectToPeers = async (clientio, bootNodes) => {
+    let peerCount = 0
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
@@ -51,11 +50,11 @@ const connectToPeers = async (clientio, bootNodes) => {
 
     let peerDirectory = directory.filter(address => address !== thisAddress)
 
-    while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
+    while (peerDirectory.length && (peerCount < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID)
-            peers.push(peer)
+            await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID)
+            peerCount++
         } catch (e) {
             console.log('error connecting to peer: ' + e)
         }
