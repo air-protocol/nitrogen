@@ -1,20 +1,23 @@
 const uuid = require('uuid')
 const localCache = require('./cache')
-const { addMeHandler, pongHandler } = require('./message')
+const { addMeHandler, pingHandler } = require('./message')
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 const serverSocket = require('./server').serverSocket
 
+let peers = []
+
 const connectToPeer = (clientio, peerAddress, addMeUUID) => {
+    console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
             console.log('sending addme message')
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
             peerSocket.on('addMe', addMeHandler)
-            peerSocket.on('testPong', pongHandler)
+            peerSocket.on('testPing', pingHandler)
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -32,7 +35,6 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
 }
 
 const connectToPeers = async (clientio, bootNodes) => {
-    let peers = []
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
@@ -60,5 +62,4 @@ const connectToPeers = async (clientio, bootNodes) => {
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
 }
-
 module.exports = connectToPeers
