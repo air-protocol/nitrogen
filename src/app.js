@@ -12,7 +12,7 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-connectToPeers(hostConfiguration.bootNodes.filter(address => address !== thisAddress)).then(() => { console.log('peers connected') }).catch((e) => {
+connectToPeers().then(() => { console.log('peers connected') }).catch((e) => {
     if (!hostConfiguration.bootNode) {
         console.log('Unable to locate a directory of peer nodes: ' + e)
         server.close()

@@ -5,11 +5,13 @@ jest.mock('../src/boot')
 
 let localCache = require('../src/cache')
 const clientio = require('socket.io-client')
+
 const hostConfiguration = require('../src/config/config')
+hostConfiguration.bootNodes = ['5.5.5.5']
+
 const getDirectoryFromBootNodes = require('../src/boot')
 const connectToPeers = require('../src/peer')
 
-const bootNodes = ['5.5.5.5']
 const uuid = 'uuid'
 
 test('connectToPeers makes outbound count connections from the peer directory', async () => {
@@ -32,7 +34,7 @@ test('connectToPeers makes outbound count connections from the peer directory', 
     })
 
     //Action
-    await connectToPeers(bootNodes)
+    await connectToPeers()
 
     //Assert
     expect(localCache.getKey).toBeCalled()
@@ -76,7 +78,7 @@ test('connectToPeers skips over failed connections', async () => {
         .mockImplementationOnce((addres, options) => { return new BadSocket() })
 
     //Action
-    await connectToPeers(bootNodes)
+    await connectToPeers()
 
     //Assert
     expect(localCache.getKey).toBeCalled()
@@ -113,7 +115,7 @@ test('connectToPeers gets a directory from boot nodes when local cache is unavai
     })
 
     //Action
-    await connectToPeers(bootNodes)
+    await connectToPeers()
 
     //Assert
     expect(localCache.getKey).toBeCalled()

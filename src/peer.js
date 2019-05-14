@@ -33,12 +33,12 @@ const connectToPeer = (peerAddress, addMeUUID) => {
     return promise
 }
 
-const connectToPeers = async (bootNodes) => {
+const connectToPeers = async () => {
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
     if (!directory) {
-        directory = await getDirectoryFromBootNodes(clientio, bootNodes)
+        directory = await getDirectoryFromBootNodes(clientio, hostConfiguration.bootNodes.filter(address => address !== thisAddress))
     }
 
     if (!directory) {
