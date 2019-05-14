@@ -1,6 +1,6 @@
 const uuid = require('uuid')
 const localCache = require('./cache')
-const { addMeHandler, pongHandler } = require('./message')
+const { addMeHandler, pingHandler } = require('./message')
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
@@ -8,13 +8,14 @@ const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 const serverSocket = require('./server').serverSocket
 
 const connectToPeer = (clientio, peerAddress, addMeUUID) => {
+    console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
             console.log('sending addme message')
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
             peerSocket.on('addMe', addMeHandler)
-            peerSocket.on('testPong', pongHandler)
+            peerSocket.on('testPing', pingHandler)
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -32,7 +33,7 @@ const connectToPeer = (clientio, peerAddress, addMeUUID) => {
 }
 
 const connectToPeers = async (clientio, bootNodes) => {
-    let peers = []
+    let peerCount = 0
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
@@ -49,16 +50,15 @@ const connectToPeers = async (clientio, bootNodes) => {
 
     let peerDirectory = directory.filter(address => address !== thisAddress)
 
-    while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
+    while (peerDirectory.length && (peerCount < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID)
-            peers.push(peer)
+            await connectToPeer(clientio, peerDirectory[peerIndex], addMeUUID)
+            peerCount++
         } catch (e) {
             console.log('error connecting to peer: ' + e)
         }
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
 }
-
 module.exports = connectToPeers
