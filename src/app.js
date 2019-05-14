@@ -1,5 +1,4 @@
 const localCache = require('./cache')
-const clientio = require('socket.io-client')
 const { serverSocket, server } = require('./server')
 
 const hostConfiguration = require('./config/config')
@@ -13,7 +12,7 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-connectToPeers(clientio, hostConfiguration.bootNodes.filter(address => address !== thisAddress)).then(() => { console.log('peers connected') }).catch((e) => {
+connectToPeers().then(() => { console.log('peers connected') }).catch((e) => {
     if (!hostConfiguration.bootNode) {
         console.log('Unable to locate a directory of peer nodes: ' + e)
         server.close()
