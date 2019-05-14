@@ -24,8 +24,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             reject('unable to connect to peer: ' + error)
         })
         peerSocket.on('disconnect', (socket) => {
-            //TODO make a story for replacing peers
-            console.log('disconnected: ' + peerAddress)
+            clientio.peers = clientio.peers.filter((peer) => { return peer !== peerSocket })
         })
         setTimeout(() => {
             reject('peer timeout')
