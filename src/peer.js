@@ -35,7 +35,6 @@ const connectToPeer = (peerAddress, addMeUUID) => {
 }
 
 const connectToPeers = async (bootNodes) => {
-    let peers = []
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')

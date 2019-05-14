@@ -67,6 +67,8 @@ test('connectToPeers skips over failed connections', async () => {
         this.emit = () => { }
     }
 
+    clientio.peers = []
+
     clientio.connect = jest.fn((address, options) => {
         return new PeerSocket()
     })
@@ -102,6 +104,8 @@ test('connectToPeers gets a directory from boot nodes when local cache is unavai
         })
         this.emit = () => { }
     }
+
+    clientio.peers = []
 
     clientio.connect = jest.fn((address, options) => {
         let peerSocket = new PeerSocket()
