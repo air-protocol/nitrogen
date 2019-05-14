@@ -18,6 +18,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
             peerSocket.on('addMe', addMeHandler)
             peerSocket.on('testPing', pingHandler)
+            peerSocket.peerAddress = peerAddress
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -25,6 +26,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
         })
         peerSocket.on('disconnect', (socket) => {
             clientio.peers = clientio.peers.filter((peer) => { return peer !== peerSocket })
+            connectToPeers()
         })
         setTimeout(() => {
             reject('peer timeout')
@@ -49,6 +51,11 @@ const connectToPeers = async () => {
     }
 
     let peerDirectory = directory.filter(address => address !== thisAddress)
+
+    //filter out the addresses of peers that are already connected
+    clientio.peers.forEach((peer) => {
+        peerDirectory = peerDirectory.filter(address => address !== peer.peerAddress)
+    })
 
     while (peerDirectory.length && (clientio.peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
