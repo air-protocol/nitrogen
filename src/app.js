@@ -5,10 +5,10 @@ const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 const connectToPeers = require('./peer')
-const { addMeHandler, pongHandler } = require('./message')
+const { addMeHandler, pingHandler } = require('./message')
 
-if(hostConfiguration.refreshDirectory) {
-    localCache.removeKey('directory')
+if (hostConfiguration.refreshDirectory) {
+    localCache.setKey('directory', hostConfiguration.bootNodes)
     localCache.save()
 }
 
@@ -20,8 +20,6 @@ connectToPeers(hostConfiguration.bootNodes.filter(address => address !== thisAdd
 })
 
 server.listen(hostConfiguration.port, hostConfiguration.address, () => {
-
-    console.log('listening: ' + hostConfiguration.port)
     console.log('listen address: ' + server.address().address + ':' + server.address().port)
     serverSocket.sockets.on('connect', (socket) => {
         console.log('connection made')
@@ -29,14 +27,11 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         //Add message handlers
         socket.on('directory', (message) => {
             let directory = localCache.getKey('directory')
-            if (hostConfiguration.bootNode && (!directory)) {
-                directory = hostConfiguration.bootNodes
-            }
             console.log('sending directory: ' + directory)
             socket.emit('directoryCast', directory)
         })
 
-        socket.on('testPong', pongHandler)
+        socket.on('testPing', pingHandler)
         socket.on('addMe', addMeHandler)
     })
 })

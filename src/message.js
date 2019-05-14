@@ -17,11 +17,10 @@ const messageSeen = (messageUUID) => {
     return true
 }
 
-const pongHandler = (peerMessage) => {
-    console.log('heard pong: ' + peerMessage.message + ' uuid: ' + peerMessage.uuid)
+const pingHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        console.log ('sending pong on')
-        serverSocket.emit('testPong', peerMessage)
+        console.log('heard ping: ' + peerMessage.message + ' uuid: ' + peerMessage.uuid)
+        serverSocket.emit('testPing', peerMessage)
     }
 }
 
@@ -33,12 +32,12 @@ const addMeHandler = (peerMessage) => {
         serverSocket.emit('addMe', peerMessage)
         let directory = localCache.getKey('directory')
         if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
+            console.log('adding ' + peerMessage.address)
             directory.push(peerMessage.address)
             localCache.setKey('directory', directory)
             localCache.save()
         }
     }
-    console.log('add me for: ' + peerMessage.address)
 }
 
-module.exports = { addMeHandler, pongHandler }
+module.exports = { addMeHandler, pingHandler }

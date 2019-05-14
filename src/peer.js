@@ -1,21 +1,23 @@
 const uuid = require('uuid')
-const clientio = require('socket.io-client')
 const localCache = require('./cache')
-const { addMeHandler, pongHandler } = require('./message')
+const { addMeHandler, pingHandler } = require('./message')
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
+const clientio = require('socket.io-client')
+clientio.peers = []
 
 const serverSocket = require('./server').serverSocket
 
 const connectToPeer = (peerAddress, addMeUUID) => {
+    console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
             console.log('sending addme message')
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
             peerSocket.on('addMe', addMeHandler)
-            peerSocket.on('testPong', pongHandler)
+            peerSocket.on('testPing', pingHandler)
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -50,16 +52,15 @@ const connectToPeers = async (bootNodes) => {
 
     let peerDirectory = directory.filter(address => address !== thisAddress)
 
-    while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
+    while (peerDirectory.length && (clientio.peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
             let peer = await connectToPeer(peerDirectory[peerIndex], addMeUUID)
-            peers.push(peer)
+            clientio.peers.push(peer)
         } catch (e) {
             console.log('error connecting to peer: ' + e)
         }
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
 }
-
 module.exports = connectToPeers
