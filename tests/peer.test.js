@@ -32,7 +32,7 @@ test('connectToPeers makes outbound count connections from the peer directory', 
     })
 
     //Action
-    await connectToPeers(clientio, bootNodes)
+    await connectToPeers(bootNodes)
 
     //Assert
     expect(localCache.getKey).toBeCalled()
@@ -74,7 +74,7 @@ test('connectToPeers skips over failed connections', async () => {
         .mockImplementationOnce((addres, options) => { return new BadSocket() })
 
     //Action
-    await connectToPeers(clientio, bootNodes)
+    await connectToPeers(bootNodes)
 
     //Assert
     expect(localCache.getKey).toBeCalled()
@@ -109,7 +109,7 @@ test('connectToPeers gets a directory from boot nodes when local cache is unavai
     })
 
     //Action
-    await connectToPeers(clientio, bootNodes)
+    await connectToPeers(bootNodes)
 
     //Assert
     expect(localCache.getKey).toBeCalled()
