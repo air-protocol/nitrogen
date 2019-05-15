@@ -21,12 +21,14 @@ const pingHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         console.log('heard ping: ' + peerMessage.message + ' uuid: ' + peerMessage.uuid)
         serverSocket.emit('testPing', peerMessage)
+        return true
     }
+    return false
 }
 
 const addMeHandler = (peerMessage) => {
     if (peerMessage.address === thisAddress) {
-        return
+        return false
     }
     if (!messageSeen(peerMessage.uuid) && peerMessage.addMeTTL--) {
         serverSocket.emit('addMe', peerMessage)
@@ -37,7 +39,9 @@ const addMeHandler = (peerMessage) => {
             localCache.setKey('directory', directory)
             localCache.save()
         }
+        return true
     }
+    return false
 }
 
 module.exports = { addMeHandler, pingHandler }

@@ -32,6 +32,10 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         })
 
         socket.on('testPing', pingHandler)
-        socket.on('addMe', addMeHandler)
+        socket.on('addMe', (message) => {
+            if (addMeHandler(message)) {
+                connectToPeers()
+            }
+        })
     })
 })

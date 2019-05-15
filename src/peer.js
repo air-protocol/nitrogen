@@ -14,9 +14,13 @@ const connectToPeer = (peerAddress, addMeUUID) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
         peerSocket.on('connect', (socket) => {
-            console.log('sending addme message')
+            console.log('connected to ' + peerAddress)
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
-            peerSocket.on('addMe', addMeHandler)
+            peerSocket.on('addMe', (message) => {
+                if (addMeHandler(message)) {
+                    connectToPeers()
+                }
+            })
             peerSocket.on('testPing', pingHandler)
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)
@@ -36,6 +40,9 @@ const connectToPeer = (peerAddress, addMeUUID) => {
 }
 
 const connectToPeers = async () => {
+    if (clientio.peers.length === hostConfiguration.outboundCount) {
+        return
+    }
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
@@ -63,7 +70,7 @@ const connectToPeers = async () => {
             let peer = await connectToPeer(peerDirectory[peerIndex], addMeUUID)
             clientio.peers.push(peer)
         } catch (e) {
-            console.log('error connecting to peer: ' + e)
+            //console.log('error connecting to peer: ' + e)
         }
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
