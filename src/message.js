@@ -30,7 +30,9 @@ const addMeHandler = (peerMessage) => {
     if (peerMessage.address === thisAddress) {
         return false
     }
-    if (!messageSeen(peerMessage.uuid) && peerMessage.addMeTTL--) {
+    if (!messageSeen(peerMessage.uuid)
+        && ((!hostConfiguration.addMeTTLBound) || (peerMessage.addMeTTL <= hostConfiguration.addMeTTLBound))
+        && peerMessage.addMeTTL--) {
         serverSocket.emit('addMe', peerMessage)
         let directory = localCache.getKey('directory')
         if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
