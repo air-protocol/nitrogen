@@ -12,7 +12,7 @@ const serverSocket = require('./server').serverSocket
 const connectToPeer = (peerAddress, addMeUUID) => {
     console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
-        let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true })
+        let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000})
         peerSocket.on('connect', (socket) => {
             console.log('connected to ' + peerAddress)
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
@@ -32,9 +32,6 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             clientio.peers = clientio.peers.filter((peer) => { return peer !== peerSocket })
             connectToPeers()
         })
-        setTimeout(() => {
-            reject('peer timeout')
-        }, 5000)
     })
     return promise
 }
