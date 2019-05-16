@@ -8,6 +8,7 @@ const hostConfig = {
     port : argv.port || 4020,
     outboundCount: 3,
     maxMessageStore: argv.maxMessageStore || 5000,
-    addMeTTL: argv.addMeTTL || 500 
+    addMeTTL: argv.addMeTTL || 500,
+    addMeTTLBound: argv.addMeTTLBound
 }
 module.exports = hostConfig
