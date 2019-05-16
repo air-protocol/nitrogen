@@ -1,6 +1,8 @@
 const localCache = require('./cache')
 const hostConfiguration = require('./config/config')
+const crypto = require('crypto')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
+const {publicKey, sign} = require('./consumer')
 
 let messageUUIDs = []
 
@@ -18,6 +20,10 @@ const messageSeen = (messageUUID) => {
 }
 
 const pingHandler = (peerMessage) => {
+    const verifier = crypto.createVerify('sha256')
+    verifier.update('test')
+    const verified = verifier.verify(publicKey, sign, 'base64')
+    console.log('Verified: ' + verified)
     if (!messageSeen(peerMessage.uuid)) {
         console.log('heard ping: ' + peerMessage.message + ' uuid: ' + peerMessage.uuid)
         serverSocket.emit('testPing', peerMessage)
