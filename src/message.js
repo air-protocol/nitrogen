@@ -18,8 +18,9 @@ const messageSeen = (messageUUID) => {
 }
 
 const pingHandler = (peerMessage) => {
+
     if (!messageSeen(peerMessage.uuid)) {
-        console.log('heard ping: ' + peerMessage.message + ' uuid: ' + peerMessage.uuid)
+        console.log('heard ping: ' + peerMessage.body.message + ' uuid: ' + peerMessage.uuid)
         serverSocket.emit('testPing', peerMessage)
         return true
     }
