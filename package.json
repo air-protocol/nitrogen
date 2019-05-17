@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "elliptic": "^6.4.1",
     "express": "^4.16.4",
     "flat-cache": "^2.0.1",
     "socket.io": "^2.2.0",
