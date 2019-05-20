@@ -1,12 +1,11 @@
 const getDirectoryFromBootNode = (clientio, hostAddress) => {
     let promise = new Promise((resolve, reject) => {
         let hostPath = 'http://' + hostAddress
-        let outboundSocket = clientio.connect(hostPath, { forcenew: true })
+        let outboundSocket = clientio.connect(hostPath, { forcenew: true, reconnection: false, timeout: 5000 })
         console.log('attempt to connect to: ' + hostPath)
         outboundSocket.on('connect', (socket) => {
             console.log('requesting directory')
             outboundSocket.emit('directory')
-
         })
 
         outboundSocket.on('directoryCast', (hostDirectory) => {
@@ -18,10 +17,6 @@ const getDirectoryFromBootNode = (clientio, hostAddress) => {
         outboundSocket.on('connect_error', (error) => {
             reject('unable to connect: ' + error)
         })
-
-        setTimeout(() => {
-            reject('boot node timeout')
-        }, 5000)
     })
     return promise
 }
