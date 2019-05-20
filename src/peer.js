@@ -6,13 +6,14 @@ const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 const clientio = require('socket.io-client')
 clientio.peers = []
+let connectRunning = false
 
 const serverSocket = require('./server').serverSocket
 
 const connectToPeer = (peerAddress, addMeUUID) => {
     console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
-        let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000})
+        let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
             console.log('connected to ' + peerAddress)
             peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
@@ -37,9 +38,10 @@ const connectToPeer = (peerAddress, addMeUUID) => {
 }
 
 const connectToPeers = async () => {
-    if (clientio.peers.length === hostConfiguration.outboundCount) {
+    if (connectRunning || (clientio.peers.length === hostConfiguration.outboundCount)) {
         return
     }
+    connectRunning = true
     let addMeUUID = uuid()
 
     let directory = localCache.getKey('directory')
@@ -48,6 +50,7 @@ const connectToPeers = async () => {
     }
 
     if (!directory) {
+        connectRunning = false
         throw ('directory is unavailable')
     } else {
         localCache.setKey('directory', directory)
@@ -71,5 +74,6 @@ const connectToPeers = async () => {
         }
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
+    connectRunning = false
 }
 module.exports = connectToPeers
