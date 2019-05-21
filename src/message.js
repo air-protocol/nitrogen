@@ -20,8 +20,18 @@ const messageSeen = (messageUUID) => {
 const pingHandler = (peerMessage) => {
 
     if (!messageSeen(peerMessage.uuid)) {
-        console.log('heard ping: ' + peerMessage.body.message + ' uuid: ' + peerMessage.uuid)
+        console.log('heard ping: ' + peerMessage.body + ' uuid: ' + peerMessage.uuid)
         serverSocket.emit('testPing', peerMessage)
+        return true
+    }
+    return false
+}
+
+const proposalHandler = (peerMessage) => {
+
+    if (!messageSeen(peerMessage.uuid)) {
+        console.log('heard proposal: ' + peerMessage.body + ' uuid: ' + peerMessage.uuid)
+        serverSocket.emit('proposal', peerMessage)
         return true
     }
     return false
@@ -47,4 +57,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, pingHandler }
+module.exports = { addMeHandler, pingHandler, proposalHandler }

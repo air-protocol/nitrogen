@@ -2,10 +2,9 @@ const localCache = require('./cache')
 const { serverSocket, server } = require('./server')
 
 const hostConfiguration = require('./config/config')
-const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 const connectToPeers = require('./peer')
-const { addMeHandler, pingHandler } = require('./message')
+const { addMeHandler, pingHandler, proposalHandler } = require('./message')
 
 if (hostConfiguration.refreshDirectory) {
     localCache.setKey('directory', hostConfiguration.bootNodes)
@@ -32,6 +31,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         })
 
         socket.on('testPing', pingHandler)
+        socket.on('proposal', proposalHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()
