@@ -2,7 +2,6 @@ const localCache = require('./cache')
 const { serverSocket, server } = require('./server')
 
 const hostConfiguration = require('./config/config')
-const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 const connectToPeers = require('./peer')
 const { addMeHandler, pingHandler, proposalHandler } = require('./message')

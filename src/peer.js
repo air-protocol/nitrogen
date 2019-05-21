@@ -8,8 +8,6 @@ const clientio = require('socket.io-client')
 clientio.peers = []
 let connectRunning = false
 
-const serverSocket = require('./server').serverSocket
-
 const connectToPeer = (peerAddress, addMeUUID) => {
     console.log('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
