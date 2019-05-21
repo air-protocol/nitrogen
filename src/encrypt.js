@@ -1,28 +1,37 @@
-const curve = require('elliptic').ec
-
-const ec = new curve('secp256k1')
-
-String.prototype.getBytes = function () {
-    let bytes = []
-    for (let i = 0; i < this.length; i++) {
-      bytes.push(this.charCodeAt(i))
-    }
-    return bytes
-  }
+const crypto = require('crypto')
+const eccrypto = require('eccrypto')
 
 const createKeys = () => {
-    return ec.genKeyPair()
+    let privateKey = eccrypto.generatePrivate()
+    let publicKey = eccrypto.getPublic(privateKey)
+    return { publicKey, privateKey }
 }
 
-const signMessage = (message, key) => {
-    message.signature = key.sign(message.body.getBytes).toDER()
-    message.publicKey = key.getPublic().encode('hex')
+const signMessage = async (message, keys) => {
+    let hashed = crypto.createHash('sha256').update(message.body).digest()
+    message.publicKey = keys.publicKey
+    message.signature = await eccrypto.sign(keys.privateKey, hashed)
     return message
 }
 
-const verifyMessage = (message) => {
-    let recepientKey = ec.keyFromPublic(message.publicKey, 'hex')
-    return recepientKey.verify(message.body.getBytes(), message.signature)
+const encryptMessage = async (message, recipientPublicKey) => {
+    message.body = await eccrypto.encrypt(recipientPublicKey, Buffer.from(message.body))
+    return message
 }
 
-module.exports = {createKeys, signMessage, verifyMessage}
+const decryptMessage = async (message, keys) => {
+    message.body = await eccrypto.decrypt(keys.privateKey, message.body)
+    return message
+}
+
+const verifyMessage = async (message) => {
+    let hashed = crypto.createHash('sha256').update(message.body).digest()
+    try {
+        await eccrypto.verify(message.publicKey, hashed, message.signature)
+        return true
+    } catch (e) {
+        return false
+    }
+}
+
+module.exports = { createKeys, signMessage, verifyMessage }

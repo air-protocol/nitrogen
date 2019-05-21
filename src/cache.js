@@ -2,7 +2,6 @@ const path = require('path')
 const hostConfiguration = require('./config/config')
 const flatCache = require('flat-cache')
 const localCache = flatCache.load('localCache', path.resolve('./cache/' + hostConfiguration.port))
-//const localCache = flatCache.load('localCache')
 let directory = localCache.getKey('directory')
 if(hostConfiguration.bootNode && ((directory === undefined) || (directory.length === 0)))
 {

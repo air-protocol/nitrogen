@@ -14,7 +14,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
             console.log('connected to ' + peerAddress)
-            peerSocket.emit('addMe', { 'address': thisAddress, 'addMeTTL': hostConfiguration.addMeTTL, 'uuid': addMeUUID })
+            peerSocket.emit('addMe', { address: thisAddress, addMeTTL: hostConfiguration.addMeTTL, uuid: addMeUUID })
             peerSocket.on('addMe', (message) => {
                 if (addMeHandler(message)) {
                     connectToPeers()
