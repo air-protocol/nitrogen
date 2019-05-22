@@ -34,4 +34,4 @@ const verifyMessage = async (message) => {
     }
 }
 
-module.exports = { createKeys, signMessage, verifyMessage }
+module.exports = { createKeys, encryptMessage, signMessage, verifyMessage }
