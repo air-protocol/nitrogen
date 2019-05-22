@@ -1,6 +1,6 @@
 const uuid = require('uuid')
 const localCache = require('./cache')
-const { addMeHandler, pingHandler, proposalHandler } = require('./message')
+const { addMeHandler, counterOfferHandler, pingHandler, proposalHandler } = require('./message')
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
@@ -22,6 +22,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             })
             peerSocket.on('testPing', pingHandler)
             peerSocket.on('proposal', proposalHandler)
+            peerSocket.on('counterOffer', counterOfferHandler)
 
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)

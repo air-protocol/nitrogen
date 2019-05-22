@@ -8,24 +8,25 @@ const createKeys = () => {
 }
 
 const signMessage = async (message, keys) => {
-    let hashed = crypto.createHash('sha256').update(message.body).digest()
+    let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
     message.publicKey = keys.publicKey
     message.signature = await eccrypto.sign(keys.privateKey, hashed)
     return message
 }
 
 const encryptMessage = async (message, recipientPublicKey) => {
-    message.body = await eccrypto.encrypt(recipientPublicKey, Buffer.from(message.body))
+    message.body = await eccrypto.encrypt(recipientPublicKey, Buffer.from(JSON.stringify(message.body)))
     return message
 }
 
 const decryptMessage = async (message, keys) => {
-    message.body = await eccrypto.decrypt(keys.privateKey, message.body)
+    let decryptedBody = await eccrypto.decrypt(keys.privateKey, message.body)
+    message.body = JSON.parse(decryptedBody)
     return message
 }
 
 const verifyMessage = async (message) => {
-    let hashed = crypto.createHash('sha256').update(message.body).digest()
+    let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
     try {
         await eccrypto.verify(message.publicKey, hashed, message.signature)
         return true
@@ -34,4 +35,4 @@ const verifyMessage = async (message) => {
     }
 }
 
-module.exports = { createKeys, encryptMessage, signMessage, verifyMessage }
+module.exports = { createKeys, decryptMessage, encryptMessage, signMessage, verifyMessage }

@@ -31,4 +31,4 @@ const counterOfferSchema = {
     }
 }
 
-module.exports = { conterOfferSchema, proposalSchema }
+module.exports = { counterOfferSchema, proposalSchema }
