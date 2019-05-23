@@ -1,13 +1,10 @@
-const { createKeys, encryptMessage, signMessage } = require('../encrypt')
 const uuid = require('uuid')
 const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const getDirectoryFromBootNodes = require('../boot')
-const { consumerAddMeHandler, counterOfferHandler, consumerProposalHandler } = require('./consumerMessageHandler')
+const { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler } = require('./consumerMessageHandler')
 
-const key = createKeys()
 const Ajv = require('ajv')
-
 const ajv = new Ajv({ allErrors: true })
 
 let peers = []
@@ -18,30 +15,29 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-const buildAndSendMessage = async (messageType, body, schema, recipientPublicKey) => {
+const buildMessage = (body, schema, key) => {
     let message = { uuid: uuid(), publicKey: key.publicKey, body: body, makerId: body.makerId }
-    if (!schema || ajv.validate(schema, message.body)) {
-        message = await signMessage(message, key)
-        if (recipientPublicKey) {
-            message = await encryptMessage(message, recipientPublicKey)
-        }
-        peers.forEach(peer => {
-            peer.emit(messageType, message)
-        })
+    if (schema) {
+        ajv.validate(schema, message.body)
     }
-    else {
-        console.log("Invalid input ")
-        console.log(ajv.errorsText())
-    }
+    return message
 }
 
-const consumerConnectToPeer = (clientio, peerAddress) => {
+const sendMessage = (messageType, message) => {
+    peers.forEach(peer => {
+        peer.emit(messageType, message)
+    })
+}
+
+const consumerConnectToPeer = (clientio, peerAddress, keys) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
             resolve(peerSocket)
             peerSocket.on('addMe', consumerAddMeHandler)
-            peerSocket.on('counterOffer', counterOfferHandler)
+            peerSocket.on('counterOffer', (counterOffer) => {
+                consumerCounterOfferHandler(counterOffer, proposals, keys.privateKey)
+            })
             peerSocket.on('proposal', (proposal) => {
                 consumerProposalHandler(proposal, proposals)
             })
@@ -56,7 +52,7 @@ const consumerConnectToPeer = (clientio, peerAddress) => {
     return promise
 }
 
-const consumerConnectToPeers = async (clientio, bootNodes) => {
+const consumerConnectToPeers = async (clientio, bootNodes, keys) => {
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -75,7 +71,7 @@ const consumerConnectToPeers = async (clientio, bootNodes) => {
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex])
+            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys)
             peers.push(peer)
         } catch (e) {
             console.log('error connecting to peer: ' + e)
@@ -84,4 +80,4 @@ const consumerConnectToPeers = async (clientio, bootNodes) => {
     }
 }
 
-module.exports = { buildAndSendMessage, consumerConnectToPeers, proposals }
+module.exports = { consumerConnectToPeers, proposals, buildMessage, sendMessage }

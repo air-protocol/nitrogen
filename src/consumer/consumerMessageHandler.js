@@ -1,8 +1,8 @@
 const localCache = require('../cache')
-const { proposals } = require('./consumerPeer')
 const hostConfiguration = require('../config/config')
 const uuid = require('uuid')
 const argv = require('yargs').argv
+const { decryptMessage } = require('../encrypt')
 
 const consumerId = argv.consumerId || uuid()
 let messageUUIDs = []
@@ -35,9 +35,10 @@ const consumerAddMeHandler = (peerMessage) => {
     console.log('add me for: ' + peerMessage.address)
 }
 
-const counterOfferHandler = (privateKey, peerMessage) => {
+const consumerCounterOfferHandler = async (peerMessage, proposals, privateKey) => {
     if (!messageSeen(peerMessage.uuid) && peerMessage.makerId === consumerId) {
-        console.log('heard counter-offer: ' + decryptMessage(privateKey, peerMessage) + ' uuid: ' + peerMessage.uuid)
+        peerMessage = await decryptMessage(peerMessage, privateKey)
+        console.log(peerMessage)
         let proposal = proposals.get(peerMessage.body.requestId)
         if (proposal) {
             proposal.counterOffers.push(peerMessage)
@@ -45,4 +46,4 @@ const counterOfferHandler = (privateKey, peerMessage) => {
     }
 }
 
-module.exports = { consumerAddMeHandler, counterOfferHandler, consumerProposalHandler}
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler}

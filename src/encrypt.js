@@ -19,8 +19,8 @@ const encryptMessage = async (message, recipientPublicKey) => {
     return message
 }
 
-const decryptMessage = async (message, keys) => {
-    let decryptedBody = await eccrypto.decrypt(keys.privateKey, message.body)
+const decryptMessage = async (message, privateKey) => {
+    let decryptedBody = await eccrypto.decrypt(privateKey, message.body)
     message.body = JSON.parse(decryptedBody)
     return message
 }

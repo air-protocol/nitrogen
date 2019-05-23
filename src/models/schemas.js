@@ -9,7 +9,8 @@ const proposalSchema = {
         "offerAmount": { "type": "number" },
         "requestAmount": { "type": "number" },
         "requestAsset": { "type": "string" },
-        "requestId": { "type": "string" }
+        "requestId": { "type": "string" },
+        "rootHash": {"type": "string"}
     }
 }
 
