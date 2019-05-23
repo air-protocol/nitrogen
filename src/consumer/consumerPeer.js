@@ -15,8 +15,8 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-const buildMessage = (body, schema, key) => {
-    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, makerId: body.makerId }
+const buildMessage = (body, key, schema) => {
+    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, makerId: body.makerId, takerId: body.takerId }
     if (schema) {
         ajv.validate(schema, message.body)
     }
@@ -36,7 +36,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys) => {
             resolve(peerSocket)
             peerSocket.on('addMe', consumerAddMeHandler)
             peerSocket.on('counterOffer', (counterOffer) => {
-                consumerCounterOfferHandler(counterOffer, proposals, keys.privateKey)
+                consumerCounterOfferHandler(counterOffer, proposals, keys)
             })
             peerSocket.on('proposal', (proposal) => {
                 consumerProposalHandler(proposal, proposals)

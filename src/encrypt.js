@@ -9,6 +9,7 @@ const createKeys = () => {
 
 const signMessage = async (message, keys) => {
     let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
+    message.hash = hashed
     message.publicKey = keys.publicKey
     message.signature = await eccrypto.sign(keys.privateKey, hashed)
     return message
