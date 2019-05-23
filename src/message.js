@@ -1,5 +1,6 @@
 const localCache = require('./cache')
 const hostConfiguration = require('./config/config')
+const { decryptMessage } = require('./encrypt')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 
 let messageUUIDs = []
@@ -30,8 +31,18 @@ const pingHandler = (peerMessage) => {
 const proposalHandler = (peerMessage) => {
 
     if (!messageSeen(peerMessage.uuid)) {
-        console.log('heard proposal: ' + peerMessage.body + ' uuid: ' + peerMessage.uuid)
+        console.log('heard proposal: ' + JSON.stringify(peerMessage.body) + ' uuid: ' + peerMessage.uuid)
         serverSocket.emit('proposal', peerMessage)
+        return true
+    }
+    return false
+}
+
+const counterOfferHandler = (peerMessage) => {
+
+    if (!messageSeen(peerMessage.uuid)) {
+        console.log('heard counterOffer: ' +  peerMessage.uuid)
+        serverSocket.emit('counterOffer', peerMessage)
         return true
     }
     return false
@@ -57,4 +68,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, pingHandler, proposalHandler }
+module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler }
