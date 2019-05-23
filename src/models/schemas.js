@@ -10,7 +10,6 @@ const proposalSchema = {
         "requestAmount": { "type": "number" },
         "requestAsset": { "type": "string" },
         "requestId": { "type": "string" },
-        "rootHash": {"type": "string"}
     }
 }
 
@@ -27,8 +26,7 @@ const counterOfferSchema = {
         "requestAsset": { "type": "string" },
         "requestId": { "type": "string" },
         "takerId": {"type": "string"},
-        "negotiationHash": {"type": "string"},
-        "counterHash": {"type": "string"}
+        "previousHash": {"type": "object"}
     }
 }
 

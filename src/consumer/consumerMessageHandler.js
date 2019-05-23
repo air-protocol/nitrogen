@@ -35,9 +35,15 @@ const consumerAddMeHandler = (peerMessage) => {
     console.log('add me for: ' + peerMessage.address)
 }
 
-const consumerCounterOfferHandler = async (peerMessage, proposals, privateKey) => {
-    if (!messageSeen(peerMessage.uuid) && peerMessage.makerId === consumerId) {
-        peerMessage = await decryptMessage(peerMessage, privateKey)
+const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
+    /* If you have not processed the message
+    and it is from the other party (your key !== message key)
+    and you are either the maker or taker
+    */
+    if (!messageSeen(peerMessage.uuid) && 
+    ((JSON.stringify(keys.publicKey) !== JSON.stringify(peerMessage.publicKey)) && 
+    (peerMessage.makerId === consumerId || peerMessage.takerId === consumerId))) {
+        peerMessage = await decryptMessage(peerMessage, keys.privateKey)
         let proposal = proposals.get(peerMessage.body.requestId)
         if (proposal) {
             proposal.counterOffers.push(peerMessage)
@@ -45,4 +51,4 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, privateKey) =
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler}
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler }
