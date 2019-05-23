@@ -41,7 +41,7 @@ const proposalHandler = (peerMessage) => {
 const counterOfferHandler = (peerMessage) => {
 
     if (!messageSeen(peerMessage.uuid)) {
-        console.log('heard counterOffer: ' + JSON.stringify(peerMessage.body) + ' uuid: ' + peerMessage.uuid)
+        console.log('heard counterOffer: ' +  peerMessage.uuid)
         serverSocket.emit('counterOffer', peerMessage)
         return true
     }

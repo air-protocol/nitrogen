@@ -38,7 +38,6 @@ const consumerAddMeHandler = (peerMessage) => {
 const consumerCounterOfferHandler = async (peerMessage, proposals, privateKey) => {
     if (!messageSeen(peerMessage.uuid) && peerMessage.makerId === consumerId) {
         peerMessage = await decryptMessage(peerMessage, privateKey)
-        console.log(peerMessage)
         let proposal = proposals.get(peerMessage.body.requestId)
         if (proposal) {
             proposal.counterOffers.push(peerMessage)
