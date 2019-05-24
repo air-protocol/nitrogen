@@ -48,11 +48,11 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
     ((JSON.stringify(keys.publicKey) !== JSON.stringify(peerMessage.publicKey)) && 
     (peerMessage.makerId === consumerId || peerMessage.takerId === consumerId))) {
         peerMessage = await decryptMessage(peerMessage, keys.privateKey)
-        let proposal = proposals.get(peerMessage.body.requestId)
         if(await !verifyMessage(peerMessage)){
             console.log("Couldn't verify message signature")
             return
         }
+        let proposal = proposals.get(peerMessage.body.requestId)
         if (proposal) {
             proposal.counterOffers.push(peerMessage)
         }
