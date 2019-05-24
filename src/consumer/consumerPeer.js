@@ -38,7 +38,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
                 consumerCounterOfferHandler(counterOffer, proposals, keys)
             })
             peerSocket.on('proposal', (proposal) => {
-                consumerProposalHandler(proposal, proposals)
+                consumerProposalHandler(proposal, proposals, keys)
             })
         })
         peerSocket.on('connect_error', (error) => {
