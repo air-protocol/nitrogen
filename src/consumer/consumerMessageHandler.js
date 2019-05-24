@@ -2,7 +2,7 @@ const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const uuid = require('uuid')
 const argv = require('yargs').argv
-const { decryptMessage } = require('../encrypt')
+const { decryptMessage, verifyMessage } = require('../encrypt')
 
 const consumerId = argv.consumerId || uuid()
 let messageUUIDs = []
@@ -18,8 +18,12 @@ const messageSeen = (messageUUID) => {
     return true
 }
 
-const consumerProposalHandler = (proposal, proposals) => {
+const consumerProposalHandler = async (proposal, proposals) => {
     if (!messageSeen(proposal)) {
+        if(await !verifyMessage(proposal)) {
+            console.log("Couldn't verify message signature")
+            return
+        }
         proposal.counterOffers = []
         proposals.set(proposal.body.requestId, proposal)
     }
@@ -44,6 +48,10 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
     ((JSON.stringify(keys.publicKey) !== JSON.stringify(peerMessage.publicKey)) && 
     (peerMessage.makerId === consumerId || peerMessage.takerId === consumerId))) {
         peerMessage = await decryptMessage(peerMessage, keys.privateKey)
+        if(await !verifyMessage(peerMessage)){
+            console.log("Couldn't verify message signature")
+            return
+        }
         let proposal = proposals.get(peerMessage.body.requestId)
         if (proposal) {
             proposal.counterOffers.push(peerMessage)
