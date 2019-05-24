@@ -18,8 +18,10 @@ const messageSeen = (messageUUID) => {
     return true
 }
 
-const consumerProposalHandler = async (proposal, proposals) => {
-    if (!messageSeen(proposal)) {
+const consumerProposalHandler = async (proposal, proposals, keys) => {
+    //If you have not processed the message
+    //and it is from another party (your key !== message key)
+    if ((!messageSeen(proposal)) && (JSON.stringify(keys.publicKey) !== JSON.stringify(proposal.publicKey))) {
         if(await !verifyMessage(proposal)) {
             console.log("Couldn't verify message signature")
             return

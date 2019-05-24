@@ -19,9 +19,12 @@ const getKeyFromPreviousHash = (previousHash, proposal) => {
 
 const processProposal = async (param, proposals, keys) => {
     let proposalBody = JSON.parse(param)
-    let message = buildMessage(proposalBody, keys, proposalSchema)
-    message = await signMessage(message, keys)
-    sendMessage('proposal', message)
+    let proposal = buildMessage(proposalBody, keys, proposalSchema)
+    proposal = await signMessage(proposal, keys)
+    sendMessage('proposal', proposal)
+
+    proposal.counterOffers = []
+    proposals.set(proposal.body.requestId, proposal)
 }
 
 const processProposals = (proposals) => {
