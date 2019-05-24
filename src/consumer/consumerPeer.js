@@ -8,7 +8,6 @@ const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true })
 
 let peers = []
-let proposals = new Map()
 
 if (hostConfiguration.refreshDirectory) {
     localCache.removeKey('directory')
@@ -29,7 +28,7 @@ const sendMessage = (messageType, message) => {
     })
 }
 
-const consumerConnectToPeer = (clientio, peerAddress, keys) => {
+const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
@@ -52,7 +51,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys) => {
     return promise
 }
 
-const consumerConnectToPeers = async (clientio, bootNodes, keys) => {
+const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals) => {
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -71,7 +70,7 @@ const consumerConnectToPeers = async (clientio, bootNodes, keys) => {
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys)
+            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals)
             peers.push(peer)
         } catch (e) {
             console.log('error connecting to peer: ' + e)
@@ -80,4 +79,4 @@ const consumerConnectToPeers = async (clientio, bootNodes, keys) => {
     }
 }
 
-module.exports = { consumerConnectToPeers, proposals, buildMessage, sendMessage }
+module.exports = { consumerConnectToPeers, buildMessage, sendMessage }

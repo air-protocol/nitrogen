@@ -10,5 +10,5 @@
 
 ### CounterCounterOffer
 ~~~
-{ "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 800, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "previousHash":{"type":"Buffer","data":[93,106,202,53,13,64,149,86,30,111,212,150,178,203,4,181,208,67,211,147,88,146,127,3,9,214,231,241,154,128,178,205]}}
+{ "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 800, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "previousHash":{"type":"Buffer","data":[125,155,166,58,33,34,105,149,77,162,117,210,91,208,253,205,68,139,243,205,24,227,37,169,181,96,97,4,249,146,239,133]}}
 ~~~
