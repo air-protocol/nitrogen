@@ -1,6 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { counterOfferSchema, proposalSchema } = require('../models/schemas')
+const { proposalSchema, negotiationSchema } = require('../models/schemas')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -43,25 +43,41 @@ const processProposals = (proposals) => {
     }
 }
 
+const processNegotiationMessage = async (messageBody, proposal, keys, messageType) => {
+    let recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
+    if (!recipientKey) {
+        console.log('Unable to match up hashes')
+    } else {
+        try {
+            let message = buildMessage(messageBody, keys, negotiationSchema)
+            message = await signMessage(message, keys)
+            copyMessage = JSON.parse(JSON.stringify(message))
+            message = await encryptMessage(message, recipientKey)
+            sendMessage(messageType, message)
+        } catch (e) {
+            console.log('unable to sign and encrypt: ' + e)
+        }
+    }
+    return copyMessage
+}
+
+const processRejectProposal = async (param, proposals, keys) => {
+    let rejectBody = JSON.parse(param)
+    let proposal = proposals.get(rejectBody.requestId)
+    if (proposal) {
+        let rejectionMessage = await processNegotiationMessage(rejectBody, proposal, keys, 'reject')
+        proposal.rejection = rejectionMessage
+    } else {
+        console.log('Unable to match rejection to original proposal')
+    }
+}
+
 const processCounterOffer = async (param, proposals, keys) => {
     let counterOfferBody = JSON.parse(param)
     let proposal = proposals.get(counterOfferBody.requestId)
     if (proposal) {
-        let recipientKey = getKeyFromPreviousHash(counterOfferBody.previousHash, proposal)
-        if (!recipientKey) {
-            console.log('Unable to match up hashes')
-        } else {
-            try {
-                let message = buildMessage(counterOfferBody, keys, counterOfferSchema)
-                message = await signMessage(message, keys)
-                let copyMessage = JSON.parse(JSON.stringify(message))
-                proposal.counterOffers.push(copyMessage)
-                message = await encryptMessage(message, recipientKey)
-                sendMessage('counterOffer', message)
-            } catch (e) {
-                console.log('unable to sign and encrypt: ' + e)
-            }
-        }
+        let counterOfferMessage = await processNegotiationMessage(counterOfferBody, proposal, keys, 'counterOffer')
+        proposal.counterOffers.push(counterOfferMessage)
     } else {
         console.log('Unable to match counter offer to a proposal')
     }
@@ -71,6 +87,7 @@ const processCounterOffers = (param, proposals) => {
     let counteredProposal = proposals.get(param)
     if (counteredProposal) {
         counteredProposal.counterOffers.forEach((counterOffer) => {
+            console.log(JSON.stringify(counterOffer.hash))
             console.log('---------------------------------')
             console.log('request: ' + counterOffer.body.requestId)
             console.log('taker id: ' + counterOffer.body.takerId)
@@ -85,4 +102,4 @@ const processCounterOffers = (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processRejectProposal }

@@ -13,7 +13,7 @@ const proposalSchema = {
     }
 }
 
-const counterOfferSchema = {
+const negotiationSchema = {
     "properties": {
         "audience": { "type": "array" },
         "challengeStake": { "type": "number" },
@@ -26,8 +26,9 @@ const counterOfferSchema = {
         "requestAsset": { "type": "string" },
         "requestId": { "type": "string" },
         "takerId": {"type": "string"},
+        "message": {"type": "string"},
         "previousHash": {"type": "object"}
     }
 }
 
-module.exports = { counterOfferSchema, proposalSchema }
+module.exports = { proposalSchema, negotiationSchema}

@@ -19,7 +19,6 @@ const messageSeen = (messageUUID) => {
 }
 
 const pingHandler = (peerMessage) => {
-
     if (!messageSeen(peerMessage.uuid)) {
         console.log('heard ping: ' + peerMessage.body + ' uuid: ' + peerMessage.uuid)
         serverSocket.emit('testPing', peerMessage)
@@ -29,9 +28,8 @@ const pingHandler = (peerMessage) => {
 }
 
 const proposalHandler = (peerMessage) => {
-
     if (!messageSeen(peerMessage.uuid)) {
-        console.log('heard proposal: ' + JSON.stringify(peerMessage.body) + ' uuid: ' + peerMessage.uuid)
+        console.log('heard proposal uuid: ' + peerMessage.uuid)
         serverSocket.emit('proposal', peerMessage)
         return true
     }
@@ -39,10 +37,18 @@ const proposalHandler = (peerMessage) => {
 }
 
 const counterOfferHandler = (peerMessage) => {
-
     if (!messageSeen(peerMessage.uuid)) {
-        console.log('heard counterOffer: ' +  peerMessage.uuid)
+        console.log('heard counterOffer uuid: ' + peerMessage.uuid)
         serverSocket.emit('counterOffer', peerMessage)
+        return true
+    }
+    return false
+}
+
+const rejectHandler = (peerMessage) => {
+    if (!messageSeen(peerMessage.uuid)) {
+        console.log('heard rejection uuid: ' + peerMessage.uuid)
+        serverSocket.emit('reject', peerMessage)
         return true
     }
     return false
@@ -68,4 +74,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler }
+module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, rejectHandler }

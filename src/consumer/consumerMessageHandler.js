@@ -22,7 +22,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
     //If you have not processed the message
     //and it is from another party (your key !== message key)
     if ((!messageSeen(proposal)) && (JSON.stringify(keys.publicKey) !== JSON.stringify(proposal.publicKey))) {
-        if(await !verifyMessage(proposal)) {
+        if (await !verifyMessage(proposal)) {
             console.log("Couldn't verify message signature")
             return
         }
@@ -41,24 +41,53 @@ const consumerAddMeHandler = (peerMessage) => {
     console.log('add me for: ' + peerMessage.address)
 }
 
-const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
+const negotiationMessageProcessor = async (peerMessage, keys) => {
     /* If you have not processed the message
     and it is from the other party (your key !== message key)
     and you are either the maker or taker
     */
-    if (!messageSeen(peerMessage.uuid) && 
-    ((JSON.stringify(keys.publicKey) !== JSON.stringify(peerMessage.publicKey)) && 
-    (peerMessage.makerId === consumerId || peerMessage.takerId === consumerId))) {
-        peerMessage = await decryptMessage(peerMessage, keys.privateKey)
-        if(await !verifyMessage(peerMessage)){
-            console.log("Couldn't verify message signature")
+    let processedPeerMessage = undefined
+    if (!messageSeen(peerMessage.uuid) &&
+        ((JSON.stringify(keys.publicKey) !== JSON.stringify(peerMessage.publicKey)) &&
+            (peerMessage.makerId === consumerId || peerMessage.takerId === consumerId))) {
+        processedPeerMessage = await decryptMessage(peerMessage, keys.privateKey)
+        if (await !verifyMessage(peerMessage)) {
+            throw new Error("Couldn't verify message signature")
+        }
+    }
+    return processedPeerMessage
+}
+
+const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let counterOfferMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (! counterOfferMessage) {
             return
         }
-        let proposal = proposals.get(peerMessage.body.requestId)
-        if (proposal) {
-            proposal.counterOffers.push(peerMessage)
+        let proposal = proposals.get(counterOfferMessage.body.requestId)
+        if (!proposal) {
+            console.log("Unable to locate original proposal for counter offer")
         }
+        proposal.counterOffers.push(counterOfferMessage)
+    } catch (e) {
+        console.log(e)
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler }
+const consumerRejectHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let rejectMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (! rejectMessage) {
+            return
+        }
+        let proposal = proposals.get(rejectMessage.body.requestId)
+        if (!proposal) {
+            console.log("Unable to locate original proposal for rejection")
+        }
+        proposal.rejection = rejectMessage
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerRejectHandler }
