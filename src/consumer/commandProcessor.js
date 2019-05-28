@@ -24,6 +24,7 @@ const processProposal = async (param, proposals, keys) => {
     sendMessage('proposal', proposal)
 
     proposal.counterOffers = []
+    proposal.acceptances = []
     proposals.set(proposal.body.requestId, proposal)
 }
 

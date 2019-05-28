@@ -85,7 +85,7 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
         if (!proposal) {
             console.log("Unable to locate original proposal for acceptance")
         }
-        proposal.acceptance.push(acceptMessage)
+        proposal.acceptances.push(acceptMessage)
     } catch (e) {
         console.log(e)
     }
