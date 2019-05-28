@@ -72,6 +72,17 @@ const processRejectProposal = async (param, proposals, keys) => {
     }
 }
 
+const processAcceptProposal = async (param, proposals, keys) => {
+    let acceptBody = JSON.parse(param)
+    let proposal = proposals.get(acceptBody.requestId)
+    if (proposal) {
+        let acceptanceMessage = await processNegotiationMessage(acceptBody, proposal, keys, 'accept')
+        proposal.acceptance = acceptanceMessage
+    } else {
+        console.log('Unable to match acceptance to original proposal')
+    }
+}
+
 const processCounterOffer = async (param, proposals, keys) => {
     let counterOfferBody = JSON.parse(param)
     let proposal = proposals.get(counterOfferBody.requestId)
@@ -87,7 +98,6 @@ const processCounterOffers = (param, proposals) => {
     let counteredProposal = proposals.get(param)
     if (counteredProposal) {
         counteredProposal.counterOffers.forEach((counterOffer) => {
-            console.log(JSON.stringify(counterOffer.hash))
             console.log('---------------------------------')
             console.log('request: ' + counterOffer.body.requestId)
             console.log('taker id: ' + counterOffer.body.takerId)
@@ -102,4 +112,4 @@ const processCounterOffers = (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processRejectProposal }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal }
