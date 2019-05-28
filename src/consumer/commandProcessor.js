@@ -68,7 +68,7 @@ const processRejectProposal = async (param, proposals, keys) => {
     let proposal = proposals.get(rejectBody.requestId)
     if (proposal) {
         let rejectionMessage = await processNegotiationMessage(rejectBody, proposal, keys, 'reject')
-        proposal.rejection = rejectionMessage
+        proposal.rejections.push(rejectionMessage)
     } else {
         console.log('Unable to match rejection to original proposal')
     }
@@ -79,7 +79,7 @@ const processAcceptProposal = async (param, proposals, keys) => {
     let proposal = proposals.get(acceptBody.requestId)
     if (proposal) {
         let acceptanceMessage = await processNegotiationMessage(acceptBody, proposal, keys, 'accept')
-        proposal.acceptance = acceptanceMessage
+        proposal.acceptances.push(acceptanceMessage)
     } else {
         console.log('Unable to match acceptance to original proposal')
     }
@@ -119,8 +119,8 @@ const processOfferHistory = (param, proposals) => {
     if (proposal) {
         console.log('---------------------------------')
         console.log('Original Proposal')
-        console.log('from public key: ' + proposal.publicKey)
-        console.log('request: ' + requestId)
+        console.log('from public key: ' + JSON.stringify(proposal.publicKey))
+        console.log('request: ' + proposal.body.requestId)
         console.log('maker id: ' + proposal.body.makerId)
         console.log('offer asset: ' + proposal.body.offerAsset)
         console.log('offer amount: ' + proposal.body.offerAmount)
@@ -130,7 +130,7 @@ const processOfferHistory = (param, proposals) => {
         proposal.counterOffers.forEach((counterOffer) => {
             console.log('---------------------------------')
             console.log('Counter Offer')
-            console.log('from public key: ' + counterOffer.publicKey)
+            console.log('from public key: ' + JSON.stringify(counterOffer.publicKey))
             console.log('request: ' + counterOffer.body.requestId)
             console.log('maker id: ' + counterOffer.body.makerId)
             console.log('taker id: ' + counterOffer.body.takerId)
@@ -143,7 +143,7 @@ const processOfferHistory = (param, proposals) => {
         proposal.rejections.forEach((rejection) => {
             console.log('---------------------------------')
             console.log('Rejection')
-            console.log('from public key: ' + rejection.publicKey)
+            console.log('from public key: ' + JSON.stringify(rejection.publicKey))
             console.log('request: ' + rejection.body.requestId)
             console.log('maker id: ' + rejection.body.makerId)
             console.log('taker id: ' + rejection.body.takerId)
@@ -156,7 +156,7 @@ const processOfferHistory = (param, proposals) => {
         proposal.acceptances.forEach((acceptance) => {
             console.log('---------------------------------')
             console.log('Acceptance')
-            console.log('from public key: ' + acceptance.publicKey)
+            console.log('from public key: ' + JSON.stringify(acceptance.publicKey))
             console.log('request: ' + acceptance.body.requestId)
             console.log('maker id: ' + acceptance.body.makerId)
             console.log('taker id: ' + acceptance.body.takerId)
