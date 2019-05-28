@@ -28,6 +28,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
         }
         proposal.counterOffers = []
         proposal.rejections = []
+        proposal.acceptances = []
         proposals.set(proposal.body.requestId, proposal)
     }
 }
@@ -75,6 +76,22 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
+const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let acceptMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (! acceptMessage) {
+            return
+        }
+        let proposal = proposals.get(acceptMessage.body.requestId)
+        if (!proposal) {
+            console.log("Unable to locate original proposal for acceptance")
+        }
+        proposal.acceptances.push(acceptMessage)
+    } catch (e) {
+        console.log(e)
+    }
+}
+
 const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     try {
         let rejectMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -91,4 +108,4 @@ const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerRejectHandler }
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler }
