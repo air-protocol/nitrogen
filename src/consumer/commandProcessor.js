@@ -25,6 +25,7 @@ const processProposal = async (param, proposals, keys) => {
 
     proposal.counterOffers = []
     proposal.acceptances = []
+    proposal.rejections = []
     proposals.set(proposal.body.requestId, proposal)
 }
 
