@@ -25,10 +25,10 @@ const negotiationSchema = {
         "requestAmount": { "type": "number" },
         "requestAsset": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": {"type": "string"},
-        "message": {"type": "string"},
-        "previousHash": {"type": "object"}
+        "takerId": { "type": "string" },
+        "message": { "type": "string" },
+        "previousHash": { "type": "object" }
     }
 }
 
-module.exports = { proposalSchema, negotiationSchema}
+module.exports = { proposalSchema, negotiationSchema }
