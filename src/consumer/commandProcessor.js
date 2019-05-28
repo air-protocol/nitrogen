@@ -102,4 +102,61 @@ const processCounterOffers = (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processRejectProposal }
+const processOfferHistory = (param, proposals) => {
+    let proposal = proposals.get(param)
+    if (proposal) {
+        console.log('---------------------------------')
+        console.log('Original Proposal')
+        console.log('from public key: ' + proposal.publicKey)
+        console.log('request: ' + requestId)
+        console.log('maker id: ' + proposal.body.makerId)
+        console.log('offer asset: ' + proposal.body.offerAsset)
+        console.log('offer amount: ' + proposal.body.offerAmount)
+        console.log('request asset: ' + proposal.body.requestAsset)
+        console.log('request amount: ' + proposal.body.requestAmount)
+        console.log('---------------------------------')
+        proposal.counterOffers.forEach((counterOffer) => {
+            console.log('---------------------------------')
+            console.log('Counter Offer')
+            console.log('from public key: ' + counterOffer.publicKey)
+            console.log('request: ' + counterOffer.body.requestId)
+            console.log('maker id: ' + counterOffer.body.makerId)
+            console.log('taker id: ' + counterOffer.body.takerId)
+            console.log('offer asset: ' + counterOffer.body.offerAsset)
+            console.log('offer amount: ' + counterOffer.body.offerAmount)
+            console.log('request asset: ' + counterOffer.body.requestAsset)
+            console.log('request amount: ' + counterOffer.body.requestAmount)
+            console.log('---------------------------------')
+        })
+        proposal.rejections.forEach((rejection) => {
+            console.log('---------------------------------')
+            console.log('Rejection')
+            console.log('from public key: ' + rejection.publicKey)
+            console.log('request: ' + rejection.body.requestId)
+            console.log('maker id: ' + rejection.body.makerId)
+            console.log('taker id: ' + rejection.body.takerId)
+            console.log('offer asset: ' + rejection.body.offerAsset)
+            console.log('offer amount: ' + rejection.body.offerAmount)
+            console.log('request asset: ' + rejection.body.requestAsset)
+            console.log('request amount: ' + rejection.body.requestAmount)
+            console.log('---------------------------------')
+        })
+        proposal.acceptances.forEach((acceptance) => {
+            console.log('---------------------------------')
+            console.log('Acceptance')
+            console.log('from public key: ' + acceptance.publicKey)
+            console.log('request: ' + acceptance.body.requestId)
+            console.log('maker id: ' + acceptance.body.makerId)
+            console.log('taker id: ' + acceptance.body.takerId)
+            console.log('offer asset: ' + acceptance.body.offerAsset)
+            console.log('offer amount: ' + acceptance.body.offerAmount)
+            console.log('request asset: ' + acceptance.body.requestAsset)
+            console.log('request amount: ' + acceptance.body.requestAmount)
+            console.log('---------------------------------')
+        })
+    } else {
+        console.log('proposal not found')
+    }
+}
+
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processRejectProposal, processOfferHistory }

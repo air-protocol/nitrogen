@@ -27,6 +27,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
             return
         }
         proposal.counterOffers = []
+        proposal.rejections = []
         proposals.set(proposal.body.requestId, proposal)
     }
 }
@@ -84,7 +85,7 @@ const consumerRejectHandler = async (peerMessage, proposals, keys) => {
         if (!proposal) {
             console.log("Unable to locate original proposal for rejection")
         }
-        proposal.rejection = rejectMessage
+        proposal.rejections.push(rejectMessage)
     } catch (e) {
         console.log(e)
     }
