@@ -63,7 +63,7 @@ const negotiationMessageProcessor = async (peerMessage, keys) => {
 const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
     try {
         let counterOfferMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! counterOfferMessage) {
+        if (!counterOfferMessage) {
             return
         }
         let proposal = proposals.get(counterOfferMessage.body.requestId)
@@ -79,7 +79,7 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
 const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
     try {
         let acceptMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! acceptMessage) {
+        if (!acceptMessage) {
             return
         }
         let proposal = proposals.get(acceptMessage.body.requestId)
@@ -95,7 +95,7 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
 const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     try {
         let rejectMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! rejectMessage) {
+        if (!rejectMessage) {
             return
         }
         let proposal = proposals.get(rejectMessage.body.requestId)
@@ -108,4 +108,14 @@ const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler }
+const consumerProposalResolved = async (peerMessage, proposals) => {
+    if ((!messageSeen(peerMessage.uuid)) && (peerMessage.makerId != consumerId) && (peerMessage.takerId != consumerId)) {
+        if (await !verifyMessage(peerMessage)) {
+            console.log("Couldn't verify message signature on proposal resolved")
+            return
+        }
+        proposals.delete(peerMessage.body.requestId)
+    }
+}
+
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolved }
