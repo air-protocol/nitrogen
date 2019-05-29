@@ -33,6 +33,21 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
     }
 }
 
+const consumerProposalResolvedHandler = async (resolution, proposals, keys) => {
+    if ((!messageSeen(resolution)) && (JSON.stringify(keys.publicKey) !== JSON.stringify(resolution.publicKey))) {
+        if (await !verifyMessage(resolution)) {
+            console.log("Couldn't verify message signature")
+            return
+        }
+        let proposal = proposals.get(resolution.body.requestId)
+        if(! proposal) {
+            console.log("Unable to find proposal")
+            return
+        }
+        proposal.resolution = resolution
+    }
+}
+
 const consumerAddMeHandler = (peerMessage) => {
     let directory = localCache.getKey('directory')
     if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
@@ -108,4 +123,4 @@ const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler }
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler}

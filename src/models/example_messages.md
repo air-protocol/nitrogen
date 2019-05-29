@@ -21,4 +21,9 @@
 ### AcceptOffer
 ~~~
 { "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 600, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "message": "accepted", "previousHash":{"type":"Buffer","data":[69,185,53,22,0,104,213,140,177,218,85,247,190,191,177,113,222,234,68,232,248,18,236,152,52,78,26,6,113,244,163,187]}}
-~~~~~
+~~~
+
+### ProposalResolved
+~~~
+{ "requestId" : "abc1234", "makerId" : "lucy", "takerId": "ricky", "message": "resolved", "previousHash":{"type":"Buffer","data":[139,133,222,29,209,223,183,108,242,41,97,234,80,191,245,24,83,163,42,239,102,173,66,251,43,236,104,34,188,171,68,187]}}
+~~~

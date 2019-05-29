@@ -9,7 +9,7 @@ const proposalSchema = {
         "offerAmount": { "type": "number" },
         "requestAmount": { "type": "number" },
         "requestAsset": { "type": "string" },
-        "requestId": { "type": "string" },
+        "requestId": { "type": "string" }
     }
 }
 
@@ -31,4 +31,14 @@ const negotiationSchema = {
     }
 }
 
-module.exports = { proposalSchema, negotiationSchema }
+const proposalResolvedSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "previousHash": { "type": "object" }
+    }
+}
+
+module.exports = { proposalSchema, negotiationSchema, proposalResolvedSchema }

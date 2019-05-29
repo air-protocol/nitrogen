@@ -4,7 +4,7 @@ const { serverSocket, server } = require('./server')
 const hostConfiguration = require('./config/config')
 
 const connectToPeers = require('./peer')
-const { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, rejectHandler } = require('./message')
+const { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, rejectHandler, proposalResolvedHandler} = require('./message')
 
 if (hostConfiguration.refreshDirectory) {
     localCache.setKey('directory', hostConfiguration.bootNodes)
@@ -35,6 +35,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         socket.on('counterOffer', counterOfferHandler)
         socket.on('reject', rejectHandler)
         socket.on('accept', acceptHandler)
+        socket.on('resolved', proposalResolvedHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()
