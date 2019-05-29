@@ -36,7 +36,6 @@ const proposalHandler = (peerMessage) => {
 }
 
 const proposalResolvedHandler = (peerMessage) => {
-    console.log("PROPOSAL RESOLVED")
     if (!messageSeen(peerMessage.uuid)) {
         console.log('heard proposal resolved: ' + peerMessage.uuid)
         serverSocket.emit('resolved', peerMessage)
