@@ -25,5 +25,5 @@
 
 ### ProposalResolved
 ~~~
-{ "requestId" : "abc1234", "makerId" : "lucy", "takerId": "ricky", "message": "resolved", "originalProposalHash":{"type":"Buffer","data":[139,133,222,29,209,223,183,108,242,41,97,234,80,191,245,24,83,163,42,239,102,173,66,251,43,236,104,34,188,171,68,187]}}
+{ "requestId" : "abc1234", "makerId" : "lucy", "takerId": "ricky", "message": "resolved", "previousHash":{"type":"Buffer","data":[139,133,222,29,209,223,183,108,242,41,97,234,80,191,245,24,83,163,42,239,102,173,66,251,43,236,104,34,188,171,68,187]}}
 ~~~

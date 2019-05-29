@@ -25,7 +25,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.on('counterOffer', counterOfferHandler)
             peerSocket.on('reject', rejectHandler)
             peerSocket.on('accept', acceptHandler)
-            peerSocket.on('proposalResolved', proposalResolvedHandler)
+            peerSocket.on('resolved', proposalResolvedHandler)
 
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)

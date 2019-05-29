@@ -37,7 +37,7 @@ const proposalResolvedSchema = {
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "takerId": { "type": "string" },
-        "originalProposalHash": { "type": "object" }
+        "previousHash": { "type": "object" }
     }
 }
 

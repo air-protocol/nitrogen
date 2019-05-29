@@ -55,7 +55,7 @@ const processProposalResolved = async (param, proposals, keys) => {
     let resolution = buildMessage(resolveBody, keys, proposalResolvedSchema)
     resolution = await signMessage(resolution, keys)
     proposal.resolution = resolution
-    sendMessage('resolvedProposal', resolution)
+    sendMessage('resolved', resolution)
 }
 
 const processNegotiationMessage = async (messageBody, proposal, keys, messageType) => {

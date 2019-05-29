@@ -39,7 +39,7 @@ const consumerProposalResolvedHandler = async (resolution, proposals, keys) => {
             console.log("Couldn't verify message signature")
             return
         }
-        let proposal = proposals.get(resolveBody.requestId)
+        let proposal = proposals.get(resolution.body.requestId)
         if(! proposal) {
             console.log("Unable to find proposal")
             return

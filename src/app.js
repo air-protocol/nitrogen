@@ -35,7 +35,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         socket.on('counterOffer', counterOfferHandler)
         socket.on('reject', rejectHandler)
         socket.on('accept', acceptHandler)
-        socket.on('proposalResolved', proposalResolvedHandler)
+        socket.on('resolved', proposalResolvedHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()
