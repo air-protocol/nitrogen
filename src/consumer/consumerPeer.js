@@ -2,6 +2,7 @@ const uuid = require('uuid')
 const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const getDirectoryFromBootNodes = require('../boot')
+const logger = require('../logging')
 const { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler } = require('./consumerMessageHandler')
 
 const Ajv = require('ajv')
@@ -54,7 +55,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             reject('unable to connect to peer: ' + error)
         })
         peerSocket.on('disconnect', (socket) => {
-            console.log('disconnected: ' + peerAddress)
+            logger.info('disconnected peer: ' + peerAddress)
         })
     })
     return promise
@@ -82,7 +83,7 @@ const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals) => {
             let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals)
             peers.push(peer)
         } catch (e) {
-            console.log('error connecting to peer: ' + e)
+            logger.warn('error connecting to peer: ' + e)
         }
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }
