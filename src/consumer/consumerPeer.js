@@ -47,7 +47,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
                 consumerAcceptHandler(proposal, proposals, keys)
             })
             peerSocket.on('resolved', (resolution) => {
-                consumerProposalResolved(resolution, proposals)
+                consumerProposalResolvedHandler(resolution, proposals)
             })
         })
         peerSocket.on('connect_error', (error) => {

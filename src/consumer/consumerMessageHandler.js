@@ -33,14 +33,14 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
     }
 }
 
-const consumerProposalResolvedHandler = async (resolution, proposals, keys) => {
-    if (!messageSeen(peerMessage.uuid) {
-        if (await !verifyMessage(peerMessage)) {
+const consumerProposalResolvedHandler = async (resolution, proposals) => {
+    if (!messageSeen(resolution.uuid)) {
+        if (await !verifyMessage(resolution)) {
             console.log("Couldn't verify message signature on proposal resolved")
             return
         }
-        if ((peerMessage.makerId != consumerId) && (peerMessage.takerId != consumerId)) {
-            proposals.delete(peerMessage.body.requestId)
+        if ((resolution.makerId != consumerId) && (resolution.takerId != consumerId)) {
+            proposals.delete(resolution.body.requestId)
         } else {
             let proposal = proposals.get(resolution.body.requestId)
             if (!proposal) {
