@@ -179,6 +179,10 @@ const processOfferHistory = (param, proposals) => {
             console.log('request amount: ' + acceptance.body.requestAmount)
             console.log('---------------------------------')
         })
+        if (proposal.resolution) {
+            console.log('---------------------------------')
+            console.log('Proposal resolved accepting taker id: ' + proposal.resolution.takerId)
+        }
     } else {
         console.log('proposal not found')
     }

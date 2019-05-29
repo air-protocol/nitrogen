@@ -33,18 +33,22 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
     }
 }
 
-const consumerProposalResolvedHandler = async (resolution, proposals, keys) => {
-    if ((!messageSeen(resolution)) && (JSON.stringify(keys.publicKey) !== JSON.stringify(resolution.publicKey))) {
+const consumerProposalResolvedHandler = async (resolution, proposals) => {
+    if (!messageSeen(resolution.uuid)) {
         if (await !verifyMessage(resolution)) {
-            console.log("Couldn't verify message signature")
+            console.log("Couldn't verify message signature on proposal resolved")
             return
         }
-        let proposal = proposals.get(resolution.body.requestId)
-        if(! proposal) {
-            console.log("Unable to find proposal")
-            return
+        if ((resolution.makerId != consumerId) && (resolution.takerId != consumerId)) {
+            proposals.delete(resolution.body.requestId)
+        } else {
+            let proposal = proposals.get(resolution.body.requestId)
+            if (!proposal) {
+                console.log("Unable to find proposal")
+                return
+            }
+            proposal.resolution = resolution
         }
-        proposal.resolution = resolution
     }
 }
 
@@ -78,7 +82,7 @@ const negotiationMessageProcessor = async (peerMessage, keys) => {
 const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
     try {
         let counterOfferMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! counterOfferMessage) {
+        if (!counterOfferMessage) {
             return
         }
         let proposal = proposals.get(counterOfferMessage.body.requestId)
@@ -94,7 +98,7 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
 const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
     try {
         let acceptMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! acceptMessage) {
+        if (!acceptMessage) {
             return
         }
         let proposal = proposals.get(acceptMessage.body.requestId)
@@ -110,7 +114,7 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
 const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     try {
         let rejectMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! rejectMessage) {
+        if (!rejectMessage) {
             return
         }
         let proposal = proposals.get(rejectMessage.body.requestId)
