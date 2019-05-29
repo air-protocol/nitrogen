@@ -4,6 +4,7 @@ const { serverSocket, server } = require('./server')
 const hostConfiguration = require('./config/config')
 
 const connectToPeers = require('./peer')
+const logger = require('./logging')
 const { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, rejectHandler, proposalResolvedHandler} = require('./message')
 
 if (hostConfiguration.refreshDirectory) {
@@ -11,22 +12,23 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-connectToPeers().then(() => { console.log('peers connected') }).catch((e) => {
+connectToPeers().then(() => { logger.info('peers connected') }).catch((e) => {
     if (!hostConfiguration.bootNode) {
-        console.log('Unable to locate a directory of peer nodes: ' + e)
+        logger.error('Unable to locate a directory of peer nodes: ' + e)
         server.close()
+        process.exit()
     }
 })
 
 server.listen(hostConfiguration.port, hostConfiguration.address, () => {
-    console.log('listen address: ' + server.address().address + ':' + server.address().port)
+    logger.info('listen address: ' + server.address().address + ':' + server.address().port)
     serverSocket.sockets.on('connect', (socket) => {
-        console.log('connection made')
+        logger.silly('inbound connection made')
 
         //Add message handlers
         socket.on('directory', (message) => {
             let directory = localCache.getKey('directory')
-            console.log('sending directory: ' + directory)
+            logger.silly('sending directory: ' + directory)
             socket.emit('directoryCast', directory)
         })
 

@@ -5,15 +5,16 @@ const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 const clientio = require('socket.io-client')
+const logger = require('./logging')
 clientio.peers = []
 let connectRunning = false
 
 const connectToPeer = (peerAddress, addMeUUID) => {
-    console.log('attempting to connect to: ' + peerAddress)
+    logger.info('attempting to connect to: ' + peerAddress)
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
-            console.log('connected to ' + peerAddress)
+            logger.info('connected to ' + peerAddress)
             peerSocket.emit('addMe', { address: thisAddress, addMeTTL: hostConfiguration.addMeTTL, uuid: addMeUUID })
             peerSocket.on('addMe', (message) => {
                 if (addMeHandler(message)) {
@@ -74,7 +75,7 @@ const connectToPeers = async () => {
             let peer = await connectToPeer(peerDirectory[peerIndex], addMeUUID)
             clientio.peers.push(peer)
         } catch (e) {
-            //console.log('error connecting to peer: ' + e)
+            logger.warn('error connecting to peer: ' + e)
         }
         peerDirectory = peerDirectory.filter(address => address !== peerDirectory[peerIndex])
     }

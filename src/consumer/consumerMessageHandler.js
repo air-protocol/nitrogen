@@ -3,6 +3,7 @@ const hostConfiguration = require('../config/config')
 const uuid = require('uuid')
 const argv = require('yargs').argv
 const { decryptMessage, verifyMessage } = require('../encrypt')
+const logger = require('../logging')
 
 const consumerId = argv.consumerId || uuid()
 let messageUUIDs = []
@@ -23,7 +24,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
     //and it is from another party (your key !== message key)
     if ((!messageSeen(proposal)) && (JSON.stringify(keys.publicKey) !== JSON.stringify(proposal.publicKey))) {
         if (await !verifyMessage(proposal)) {
-            console.log("Couldn't verify message signature")
+            logger.warn("Couldn't verify message signature on inbound proposal")
             return
         }
         proposal.counterOffers = []
@@ -36,7 +37,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
 const consumerProposalResolvedHandler = async (resolution, proposals) => {
     if (!messageSeen(resolution.uuid)) {
         if (await !verifyMessage(resolution)) {
-            console.log("Couldn't verify message signature on proposal resolved")
+            logger.warn("Couldn't verify message signature on inbound proposal resolution")
             return
         }
         if ((resolution.makerId != consumerId) && (resolution.takerId != consumerId)) {
@@ -44,7 +45,7 @@ const consumerProposalResolvedHandler = async (resolution, proposals) => {
         } else {
             let proposal = proposals.get(resolution.body.requestId)
             if (!proposal) {
-                console.log("Unable to find proposal")
+                logger.warn("Unable to find proposal for inbound proposal resolution")
                 return
             }
             proposal.resolution = resolution
@@ -59,7 +60,7 @@ const consumerAddMeHandler = (peerMessage) => {
         localCache.setKey('directory', directory)
         localCache.save()
     }
-    console.log('add me for: ' + peerMessage.address)
+    logger.info('add me discovered for: ' + peerMessage.address)
 }
 
 const negotiationMessageProcessor = async (peerMessage, keys) => {
@@ -87,11 +88,12 @@ const consumerCounterOfferHandler = async (peerMessage, proposals, keys) => {
         }
         let proposal = proposals.get(counterOfferMessage.body.requestId)
         if (!proposal) {
-            console.log("Unable to locate original proposal for counter offer")
+            logger.warn("Unable to locate original proposal for inbound counter offer")
+            return
         }
         proposal.counterOffers.push(counterOfferMessage)
     } catch (e) {
-        console.log(e)
+        logger.warn("unable to process inbound counter offer: " + e)
     }
 }
 
@@ -103,11 +105,12 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
         }
         let proposal = proposals.get(acceptMessage.body.requestId)
         if (!proposal) {
-            console.log("Unable to locate original proposal for acceptance")
+            logger.warn("Unable to locate original proposal for inbound acceptance")
+            return
         }
         proposal.acceptances.push(acceptMessage)
     } catch (e) {
-        console.log(e)
+        logger.warn("unable to process inbound acceptance: " + e)
     }
 }
 
@@ -119,11 +122,12 @@ const consumerRejectHandler = async (peerMessage, proposals, keys) => {
         }
         let proposal = proposals.get(rejectMessage.body.requestId)
         if (!proposal) {
-            console.log("Unable to locate original proposal for rejection")
+            logger.warn("Unable to locate original proposal for inbound rejection")
+            return
         }
         proposal.rejections.push(rejectMessage)
     } catch (e) {
-        console.log(e)
+        logger.warn("unable to process inbound rejection: " + e)
     }
 }
 
