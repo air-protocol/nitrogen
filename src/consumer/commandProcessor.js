@@ -1,6 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { proposalSchema, negotiationSchema } = require('../models/schemas')
+const { proposalSchema, negotiationSchema, proposalResolvedSchema } = require('../models/schemas')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -43,6 +43,19 @@ const processProposals = (proposals) => {
     } else {
         console.log('no proposals')
     }
+}
+
+const processProposalResolved = async (param, proposals, keys) => {
+    let resolveBody = JSON.parse(param)
+    let proposal = proposals.get(resolveBody.requestId)
+    if(! proposal) {
+        console.log("Unable to find proposal")
+        return
+    }
+    let resolution = buildMessage(resolveBody, keys, proposalResolvedSchema)
+    resolution = await signMessage(resolution, keys)
+    proposal.resolution = resolution
+    sendMessage('resolved', resolution)
 }
 
 const processNegotiationMessage = async (messageBody, proposal, keys, messageType) => {
@@ -166,9 +179,13 @@ const processOfferHistory = (param, proposals) => {
             console.log('request amount: ' + acceptance.body.requestAmount)
             console.log('---------------------------------')
         })
+        if (proposal.resolution) {
+            console.log('---------------------------------')
+            console.log('Proposal resolved accepting taker id: ' + resolution.takerId)
+        }
     } else {
         console.log('proposal not found')
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved }

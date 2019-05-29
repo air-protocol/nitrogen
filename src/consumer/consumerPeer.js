@@ -2,7 +2,7 @@ const uuid = require('uuid')
 const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const getDirectoryFromBootNodes = require('../boot')
-const { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolved } = require('./consumerMessageHandler')
+const { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler } = require('./consumerMessageHandler')
 
 const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true })

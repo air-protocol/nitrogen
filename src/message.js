@@ -35,6 +35,15 @@ const proposalHandler = (peerMessage) => {
     return false
 }
 
+const proposalResolvedHandler = (peerMessage) => {
+    if (!messageSeen(peerMessage.uuid)) {
+        console.log('heard proposal resolved: ' + peerMessage.uuid)
+        serverSocket.emit('resolved', peerMessage)
+        return true
+    }
+    return false 
+}
+
 const counterOfferHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         console.log('heard counterOffer uuid: ' + peerMessage.uuid)
@@ -82,4 +91,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, rejectHandler }
+module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, rejectHandler, proposalResolvedHandler }
