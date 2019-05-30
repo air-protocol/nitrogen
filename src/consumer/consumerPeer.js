@@ -33,7 +33,6 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
-            resolve(peerSocket)
             peerSocket.on('addMe', consumerAddMeHandler)
             peerSocket.on('counterOffer', (counterOffer) => {
                 consumerCounterOfferHandler(counterOffer, proposals, keys)
@@ -50,6 +49,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             peerSocket.on('resolved', (resolution) => {
                 consumerProposalResolvedHandler(resolution, proposals)
             })
+            resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
             reject('unable to connect to peer: ' + error)
