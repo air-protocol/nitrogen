@@ -71,13 +71,13 @@ proposals
 ~~~
 2. Enter a counter offer from Ricky by issuing the following command
 ~~~
-{ "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 600, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "message": "countered", "previousHash":{"type":"Buffer","data":[139,133,222,29,209,223,183,108,242,41,97,234,80,191,245,24,83,163,42,239,102,173,66,251,43,236,104,34,188,171,68,187]}}
+counterOffer { "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 600, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "message": "countered", "previousHash":{"type":"Buffer","data":[139,133,222,29,209,223,183,108,242,41,97,234,80,191,245,24,83,163,42,239,102,173,66,251,43,236,104,34,188,171,68,187]}}
 ~~~
 Note that this message contains the hash of the previous message tying them together.
 
 3.  Let's enter a counter offer from Lucy by issuing the following command
 ~~~
-{ "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 800, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "previousHash":{"type":"Buffer","data":[103,151,204,176,164,116,231,143,75,168,57,118,179,193,82,163,156,112,218,54,188,11,49,56,22,7,122,25,190,47,180,28]}}
+counterOffer { "requestId" : "abc1234", "makerId" : "lucy", "offerAsset" : "walnuts", "offerAmount" : 300, "requestAsset" : "peanuts", "requestAmount" : 800, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId": "ricky", "previousHash":{"type":"Buffer","data":[103,151,204,176,164,116,231,143,75,168,57,118,179,193,82,163,156,112,218,54,188,11,49,56,22,7,122,25,190,47,180,28]}}
 ~~~
 
 At this point you can issue the following command on any consumer to see all counter offers related to their negotiation:
