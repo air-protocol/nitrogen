@@ -1,6 +1,7 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { proposalSchema, negotiationSchema, proposalResolvedSchema } = require('../models/schemas')
+const { initiateSettlement } = require('./chain')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -30,6 +31,8 @@ const processProposal = async (param, proposals, keys) => {
 }
 
 const processProposals = (proposals) => {
+    console.clear()
+    //console.log(JSON.stringify(Array.from(proposals.entries())))
     if (proposals.size) {
         proposals.forEach((proposal, requestId) => {
             console.log('---------------------------------')
@@ -96,6 +99,20 @@ const processAcceptProposal = async (param, proposals, keys) => {
     } else {
         console.log('Unable to match acceptance to original proposal')
     }
+}
+
+const processSettleProposal = async (param, proposals) => {
+    let settlement = JSON.parse(param)
+    let proposal = proposals.get(settlement.requestId)
+    if(! proposal) {
+        console.log('Unable to locate proposal')
+        return
+    }
+    if (! proposal.resolution) {
+        console.log('Proposal is not resolved')
+        return
+    }
+    initiateSettlement()
 }
 
 const processCounterOffer = async (param, proposals, keys) => {
@@ -188,4 +205,4 @@ const processOfferHistory = (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal }
