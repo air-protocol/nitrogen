@@ -32,7 +32,6 @@ const processProposal = async (param, proposals, keys) => {
 
 const processProposals = (proposals) => {
     console.clear()
-    //console.log(JSON.stringify(Array.from(proposals.entries())))
     if (proposals.size) {
         proposals.forEach((proposal, requestId) => {
             console.log('---------------------------------')
