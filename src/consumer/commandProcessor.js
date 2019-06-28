@@ -1,3 +1,7 @@
+const stellar = require('stellar-sdk')
+const server = new stellar.Server('https://horizon-testnet.stellar.org')
+const fetch = require('node-fetch')
+
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { proposalSchema, negotiationSchema, proposalResolvedSchema } = require('../models/schemas')
@@ -204,4 +208,18 @@ const processOfferHistory = (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal }
+const processTransactionHistory = async (accountId) => {
+    const response = await fetch(`https://horizon-testnet.stellar.org/accounts/${accountId}/transactions`)
+    const responseJson = await response.json()
+    responseJson._embedded.records.forEach((item) => {
+        console.log('\n' + 'Source Account: ' + item.source_account)
+        console.log('Source Account Sequence: '+ item.source_account_sequence)
+        console.log('Created At: ' + item.created_at)
+        console.log('Memo: ' + item.memo)
+        console.log('Successful: ' + item.successful)
+        console.log('Fee Paid: ' + item.fee_paid)
+        console.log('Ledger number: ' + item.ledger)
+    })
+}
+
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory }
