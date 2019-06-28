@@ -1,7 +1,7 @@
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
 
-const initiateSettlement = async () => {
+const initiateSettlement = async (secret, challengeStake, nativeAmount) => {
 
 }
 

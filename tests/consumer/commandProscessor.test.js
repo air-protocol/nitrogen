@@ -42,4 +42,17 @@ test('processSettleProposal doest not call initiateSettlement when proposal is n
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()
-})
+}) 
+
+test('processSettleProposal doest not call initiateSettlement when proposal is resolved without a taker', async () => {
+    //Assemble
+    const settlementJson = '{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
+    const unresolvedProposals = new Map(JSON.parse(proposalsJson))
+    unresolvedProposals.get('abc1234').resolution.takerId = ''
+
+    //Action
+    await processSettleProposal(settlementJson, unresolvedProposals)
+
+    //Assert
+    expect(chain.initiateSettlement).not.toBeCalled()
+}) 
