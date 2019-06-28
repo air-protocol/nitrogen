@@ -1,7 +1,7 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { proposalSchema, negotiationSchema, proposalResolvedSchema } = require('../models/schemas')
-const { initiateSettlement } = require('./chain')
+const { initiateSettlement, transactionHistory } = require('./chain')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -204,4 +204,17 @@ const processOfferHistory = (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal }
+const processTransactionHistory = async (accountId) => {
+    const records = await transactionHistory(accountId)
+    records.forEach((item) => {
+        console.log('\n' + 'Source Account: ' + item.source_account)
+        console.log('Source Account Sequence: '+ item.source_account_sequence)
+        console.log('Created At: ' + item.created_at)
+        console.log('Memo: ' + item.memo)
+        console.log('Successful: ' + item.successful)
+        console.log('Fee Paid: ' + item.fee_paid)
+        console.log('Ledger number: ' + item.ledger)
+    })
+}
+
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory }
