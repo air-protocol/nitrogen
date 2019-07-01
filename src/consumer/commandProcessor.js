@@ -121,7 +121,7 @@ const processSettleProposal = async (param, proposals) => {
         console.log('Proposal did not resolve an acceptance')
         return
     }
-    initiateSettlement(settlement.secret, acceptance.challengeStake, acceptance.offerAmount)
+    initiateSettlement(settlement.secret, acceptance.body.challengeStake, acceptance.body.offerAmount)
 }
 
 const processCounterOffer = async (param, proposals, keys) => {

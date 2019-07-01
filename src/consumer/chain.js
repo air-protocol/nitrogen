@@ -4,20 +4,27 @@ const fetch = require('node-fetch')
 
 const initiateSettlement = async (secret, challengeStake, nativeAmount) => {
     const server = new stellar.Server('https://horizon-testnet.stellar.org');
+    stellar.Network.useTestNetwork()
+
     const pair = stellar.Keypair.fromSecret(secret)
     const escrowPair = stellar.Keypair.random()
-    const account = await server.loadAccount(pair.publicKey)
+    let account = undefined
 
-    stellar.Network.useTestNetwork()
+    try {
+        account = await server.loadAccount(pair.publicKey())
+    } catch (e) {
+        console.log('unable to load account: ' + e)
+        return
+    }
 
     const txOptions = {
         fee: await server.fetchBaseFee()
     }
 
-    const total = txOptions.fee + challengeStake + nativeAmount
-    
+    const total = challengeStake + nativeAmount
+
     const escrowAccountConfig = {
-        destination: escrowPair.publicKey,
+        destination: escrowPair.publicKey(),
         startingBalance: total.toString()
     }
 

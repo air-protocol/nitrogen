@@ -37,7 +37,7 @@ stellar.Server.mockImplementation((url) => {
 })
 
 afterEach(() => {
-    //stellar.Server.mockClear()
+    stellar.Server.mockClear()
 })
 
 test('initiateSettlement pulls account', async () => {
@@ -46,9 +46,9 @@ test('initiateSettlement pulls account', async () => {
     const challengeStake = 10
     const nativeAmount = 200
     const accountPair = new stellar.Keypair()
-    accountPair.publicKey = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    accountPair.publicKey = () => 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const escrowPair = new stellar.Keypair()
-    escrowPair.publicKey = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
+    escrowPair.publicKey = () => 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
     stellar.Keypair.fromSecret.mockReturnValue(accountPair)
     stellar.Keypair.random.mockReturnValue(escrowPair)
 
@@ -57,7 +57,7 @@ test('initiateSettlement pulls account', async () => {
 
     //Assert
     expect(stellar.Keypair.fromSecret).toBeCalledWith(secret)
-    expect(mockLoadAccount).toBeCalledWith(accountPair.publicKey)
+    expect(mockLoadAccount).toBeCalledWith(accountPair.publicKey())
 })
 
 test('initiateSettlement creates funded escrow', async () => {
@@ -66,9 +66,9 @@ test('initiateSettlement creates funded escrow', async () => {
     const challengeStake = 10
     const nativeAmount = 200
     const accountPair = new stellar.Keypair()
-    accountPair.publicKey = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    accountPair.publicKey = () => 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const escrowPair = new stellar.Keypair()
-    escrowPair.publicKey = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
+    escrowPair.publicKey = () => 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
     stellar.Keypair.fromSecret.mockReturnValue(accountPair)
     stellar.Keypair.random.mockReturnValue(escrowPair)
 
@@ -80,8 +80,7 @@ test('initiateSettlement creates funded escrow', async () => {
     expect(transaction.operations[0].type).toEqual('createAccount')
     expect(transaction.operations[0].destination).toEqual('GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME')
 
-    //Base fee is mocked to 2
     //Challenge stake is 10
     //Native amount paid is 200
-    expect(transaction.operations[0].startingBalance).toEqual('212.0000000')
+    expect(transaction.operations[0].startingBalance).toEqual('210.0000000')
 })
