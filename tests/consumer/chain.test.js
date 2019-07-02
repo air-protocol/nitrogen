@@ -90,7 +90,8 @@ test('initiateSettlement creates funded escrow', async () => {
 
     //Challenge stake is 10
     //Native amount paid is 200
-    expect(transaction.operations[0].startingBalance).toEqual('210.0000000')
+    //Operation fees are .00004
+    expect(transaction.operations[0].startingBalance).toEqual('210.0000400')
 })
 
 test('initiateSettlement configures escrow', async () => {

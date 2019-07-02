@@ -1,17 +1,16 @@
-// TODO add additional lumens to escrow to cover configuration fees 1 per signature
-
-
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
+const logger = require('./clientLogging')
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
+    const operationFees = .00004
+
     let buyerAccount
     try {
         buyerAccount = await server.loadAccount(buyerPair.publicKey())
     } catch (e) {
-        //TODO logging framework and rethrow
-        console.log('unable to load buyer account: ' + e)
-        return
+        logger.error('unable to load buyer account: ' + e)
+        throw(e)
     }
 
     const escrowPair = stellar.Keypair.random()
@@ -19,7 +18,7 @@ const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => 
         fee: await server.fetchBaseFee()
     }
 
-    const total = challengeStake + nativeAmount
+    const total = challengeStake + nativeAmount + operationFees
 
     const escrowAccountConfig = {
         destination: escrowPair.publicKey(),
@@ -42,9 +41,8 @@ const configureEscrow = async (server, buyerPair, escrowPair, sellerKey, juryKey
     try {
         escrowAccount = await server.loadAccount(escrowPair.publicKey())
     } catch (e) {
-        //TODO logging framework and rethrow
-        console.log('unable to load escrow account: ' + e)
-        return
+        logger.error('unable to load escrow account: ' + e)
+        throw(e) 
     }
 
     const thresholds = {
