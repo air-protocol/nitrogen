@@ -1,8 +1,13 @@
+/* TODO
+pass public key of jury and taker for signature configuration
+add additional lumens to escrow to cover configuration fees 1 per signature
+*/
+
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
 
 
-const initiateSettlement = async (secret, challengeStake, nativeAmount) => {
+const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
     const server = new stellar.Server('https://horizon-testnet.stellar.org');
     stellar.Network.useTestNetwork()
 
