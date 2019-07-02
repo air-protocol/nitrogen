@@ -1,7 +1,5 @@
-/* TODO
-pass public key of jury and taker for signature configuration
-add additional lumens to escrow to cover configuration fees 1 per signature
-*/
+// TODO add additional lumens to escrow to cover configuration fees 1 per signature
+
 
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
@@ -33,14 +31,54 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
         startingBalance: total.toString()
     }
 
-    let transaction = new stellar.TransactionBuilder(account, txOptions)
+    let createEscrowTransaction = new stellar.TransactionBuilder(account, txOptions)
         .addOperation(stellar.Operation.createAccount(escrowAccountConfig))
         .setTimeout(stellar.TimeoutInfinite)
         .build()
 
-    transaction.sign(pair)
+    createEscrowTransaction.sign(pair)
+    await server.submitTransaction(createEscrowTransaction)
 
-    await server.submitTransaction(transaction)
+    const escrowAccount = await server.loadAccount(escrowPair.publicKey())
+
+    const thresholds = {
+        masterWeight: 0, // Escrow account has no rights
+        lowThreshold: 1,
+        medThreshold: 2, // payment threshold
+        highThreshold: 2,
+    }
+
+    const buyer = {
+        signer: {
+            ed25519PublicKey: pair.publicKey(),
+            weight: 1,
+        }
+    }
+
+    const seller = {
+        signer: {
+            ed25519PublicKey: sellerKey,
+            weight: 1,
+        }
+    }
+
+    const jury = {
+        signer: {
+            ed25519PublicKey: juryKey,
+            weight: 1,
+        }
+    }
+
+    let configureEscrowTransaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
+        .addOperation(stellar.Operation.setOptions(thresholds))
+        .addOperation(stellar.Operation.setOptions(buyer))
+        .addOperation(stellar.Operation.setOptions(seller))
+        .addOperation(stellar.Operation.setOptions(jury))
+        .setTimeout(stellar.TimeoutInfinite)
+        .build()
+
+    configureEscrowTransaction.sign(escrowPair)
+    await server.submitTransaction(configureEscrowTransaction)
 }
 
 const transactionHistory = async (accountId) => {
