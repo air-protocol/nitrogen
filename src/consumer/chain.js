@@ -9,14 +9,14 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
     const server = new stellar.Server('https://horizon-testnet.stellar.org');
     stellar.Network.useTestNetwork()
 
-    const pair = stellar.Keypair.fromSecret(secret)
+    const buyerPair = stellar.Keypair.fromSecret(secret)
     const escrowPair = stellar.Keypair.random()
-    let account = undefined
+    let buyerAccount = undefined
 
     try {
-        account = await server.loadAccount(pair.publicKey())
+        buyerAccount = await server.loadAccount(buyerPair.publicKey())
     } catch (e) {
-        console.log('unable to load account: ' + e)
+        console.log('unable to load buyer account: ' + e)
         return
     }
 
@@ -31,15 +31,21 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
         startingBalance: total.toString()
     }
 
-    let createEscrowTransaction = new stellar.TransactionBuilder(account, txOptions)
+    let createEscrowTransaction = new stellar.TransactionBuilder(buyerAccount, txOptions)
         .addOperation(stellar.Operation.createAccount(escrowAccountConfig))
         .setTimeout(stellar.TimeoutInfinite)
         .build()
 
-    createEscrowTransaction.sign(pair)
+    createEscrowTransaction.sign(buyerPair)
     await server.submitTransaction(createEscrowTransaction)
 
-    const escrowAccount = await server.loadAccount(escrowPair.publicKey())
+    let escrowAccount = undefined
+    try {
+        escrowAccount = await server.loadAccount(escrowPair.publicKey())
+    } catch (e) {
+        console.log('unable to load escrow account: ' + e)
+        return
+    }
 
     const thresholds = {
         masterWeight: 0, // Escrow account has no rights
@@ -50,7 +56,7 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
 
     const buyer = {
         signer: {
-            ed25519PublicKey: pair.publicKey(),
+            ed25519PublicKey: buyerPair.publicKey(),
             weight: 1,
         }
     }
