@@ -4,22 +4,17 @@
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
 
-
-const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org');
-    stellar.Network.useTestNetwork()
-
-    const buyerPair = stellar.Keypair.fromSecret(secret)
-    const escrowPair = stellar.Keypair.random()
-    let buyerAccount = undefined
-
+const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
+    let buyerAccount
     try {
         buyerAccount = await server.loadAccount(buyerPair.publicKey())
     } catch (e) {
+        //TODO logging framework and rethrow
         console.log('unable to load buyer account: ' + e)
         return
     }
 
+    const escrowPair = stellar.Keypair.random()
     const txOptions = {
         fee: await server.fetchBaseFee()
     }
@@ -39,7 +34,19 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
     createEscrowTransaction.sign(buyerPair)
     await server.submitTransaction(createEscrowTransaction)
 
-    let escrowAccount = undefined
+    return escrowPair
+}
+
+
+const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
+    const server = new stellar.Server('https://horizon-testnet.stellar.org');
+    stellar.Network.useTestNetwork()
+
+    const buyerPair = stellar.Keypair.fromSecret(secret)
+
+    const escrowPair = await createEscrow(server, buyerPair, challengeStake, nativeAmount)
+
+    let escrowAccount
     try {
         escrowAccount = await server.loadAccount(escrowPair.publicKey())
     } catch (e) {
@@ -73,6 +80,10 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
             ed25519PublicKey: juryKey,
             weight: 1,
         }
+    }
+
+    const txOptions = {
+        fee: await server.fetchBaseFee()
     }
 
     let configureEscrowTransaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
