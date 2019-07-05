@@ -107,9 +107,8 @@ const processFulfillment = async (param, proposals, keys) => {
     {
         recipientKey = acceptance.publicKey
     } else {
-        recipientKey = getKeyFromPreviousHash(acceptance.previousHash, proposal)
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
     }
-
     if (!recipientKey) {
         console.log('Unable to match up hashes')
     } else {
@@ -118,13 +117,12 @@ const processFulfillment = async (param, proposals, keys) => {
             message = await signMessage(message, keys)
             copyMessage = JSON.parse(JSON.stringify(message))
             message = await encryptMessage(message, recipientKey)
-            sendMessage(messageType, message)
+            sendMessage('fulfillment', message)
         } catch (e) {
             console.log('unable to sign and encrypt: ' + e)
         }
     }
 }
-
 
 const processRejectProposal = async (param, proposals, keys) => {
     let rejectBody = JSON.parse(param)

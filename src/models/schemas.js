@@ -47,7 +47,7 @@ const fulfillmentSchema = {
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "takerId": { "type": "string" },
-        "fulfillment" { "type": "object" },
+        "fulfillment": { "type": "object" },
         "previousHash": { "type": "object" }
     }
 }
