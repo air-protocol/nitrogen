@@ -1,6 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { proposalSchema, negotiationSchema, proposalResolvedSchema } = require('../models/schemas')
+const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema } = require('../models/schemas')
 const { initiateSettlement, transactionHistory } = require('./chain')
 const hostConfiguration = require('../config/config')
 
@@ -78,6 +78,53 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
     }
     return copyMessage
 }
+
+const processFulfillment = async (param, proposals, keys) => {
+    //previous hash is of acceptance
+    //TODO fulfillments are attached to acceptance (ie. acceptance.fulfillments)
+    let fulfillmentBody = JSON.parse(param)
+    let proposal = proposals.get(fulfillmentBody.requestId)
+    if(! proposal) {
+        console.log('Unable to locate proposal')
+        return
+    }
+    if (! proposal.resolution) {
+        console.log('Proposal is not resolved')
+        return
+    }
+    let acceptance = undefined
+    for(i = 0; i < proposal.acceptances.length; i++) {
+        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
+            acceptance = proposal.acceptances[i]
+        }
+    }
+    if (! acceptance) {
+        console.log('Proposal did not resolve an acceptance')
+        return
+    }
+    let recipientKey
+    if(JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey))
+    {
+        recipientKey = acceptance.publicKey
+    } else {
+        recipientKey = getKeyFromPreviousHash(acceptance.previousHash, proposal)
+    }
+
+    if (!recipientKey) {
+        console.log('Unable to match up hashes')
+    } else {
+        try {
+            let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
+            message = await signMessage(message, keys)
+            copyMessage = JSON.parse(JSON.stringify(message))
+            message = await encryptMessage(message, recipientKey)
+            sendMessage(messageType, message)
+        } catch (e) {
+            console.log('unable to sign and encrypt: ' + e)
+        }
+    }
+}
+
 
 const processRejectProposal = async (param, proposals, keys) => {
     let rejectBody = JSON.parse(param)
@@ -228,4 +275,4 @@ const processTransactionHistory = async (accountId) => {
     })
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment }
