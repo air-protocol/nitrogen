@@ -3,7 +3,13 @@ const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const getDirectoryFromBootNodes = require('../boot')
 const logger = require('../logging')
-const { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler } = require('./consumerMessageHandler')
+const { consumerAddMeHandler,
+    consumerCounterOfferHandler,
+    consumerProposalHandler,
+    consumerAcceptHandler,
+    consumerRejectHandler,
+    consumerProposalResolvedHandler,
+    consumerFulfillmentHandler } = require('./consumerMessageHandler')
 
 const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true })
@@ -40,14 +46,17 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             peerSocket.on('proposal', (proposal) => {
                 consumerProposalHandler(proposal, proposals, keys)
             })
-            peerSocket.on('reject', (proposal) => {
-                consumerRejectHandler(proposal, proposals, keys)
+            peerSocket.on('reject', (rejectMessage) => {
+                consumerRejectHandler(rejectMessage, proposals, keys)
             })
-            peerSocket.on('accept', (proposal) => {
-                consumerAcceptHandler(proposal, proposals, keys)
+            peerSocket.on('accept', (acceptMessage) => {
+                consumerAcceptHandler(acceptMessage, proposals, keys)
             })
-            peerSocket.on('resolved', (resolution) => {
-                consumerProposalResolvedHandler(resolution, proposals)
+            peerSocket.on('resolved', (resolutionMessage) => {
+                consumerProposalResolvedHandler(resolutionMessage, proposals)
+            })
+            peerSocket.on('fulfillment', (fulfillmentMessage) => {
+                consumerFulfillmentHandler(fulfillmentMessage, proposals, keys)
             })
             resolve(peerSocket)
         })

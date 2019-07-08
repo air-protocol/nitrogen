@@ -41,4 +41,14 @@ const proposalResolvedSchema = {
     }
 }
 
-module.exports = { proposalSchema, negotiationSchema, proposalResolvedSchema }
+const fulfillmentSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "fulfillment": { "type": "object" },
+        "previousHash": { "type": "object" }
+    }
+}
+module.exports = { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema }
