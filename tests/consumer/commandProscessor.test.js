@@ -52,10 +52,34 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
     const requestAmount = 200
 
     //Action
+    try {
     await processSettleProposal(settlementJson, proposals)
+    } catch (e) {
+        //noop
+    }
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()
+})
+
+test('processSettleProposal throws an error when caller is not the buyer (taker as buyer)', async () => {
+    //Assemble
+    config.consumerId = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const settlementJson = '{ "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}'
+    const buyerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
+    const sellerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const challengeStake = 100
+    const requestAmount = 200
+
+    //Action
+    try {
+        await processSettleProposal(settlementJson, proposals)
+    } catch (e) {
+        //Assert
+        expect(e.message).toMatch('only party buying with lumens can initiate settlement')
+    }
+
 })
 
 test('processSettleProposal does not call initiateSettlement on chain when caller is not the buyer', async () => {
@@ -69,10 +93,33 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
     const offerAmount = 200
 
     //Action
-    await processSettleProposal(settlementJson, takerBuyerProposals)
+    try {
+        await processSettleProposal(settlementJson, takerBuyerProposals)
+    } catch (e) {
+        //noop
+    }
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()
+})
+
+test('processSettleProposal throws an error when caller is not the buyer', async () => {
+    //Assemble
+    config.consumerId = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
+    const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
+    const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
+    const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const challengeStake = 100
+    const offerAmount = 200
+
+    //Action
+    try {
+        await processSettleProposal(settlementJson, takerBuyerProposals)
+    } catch (e) {
+        //Assert
+        expect(e.message).toMatch('only party buying with lumens can initiate settlement')
+    }
 })
 
 test('processSettleProposal calls initiateSettlement on chain when proposal is resolved', async () => {

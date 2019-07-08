@@ -124,12 +124,12 @@ const processSettleProposal = async (param, proposals) => {
     }
     if (proposal.body.offerAsset === 'native') {
         if (hostConfiguration.consumerId !== proposal.body.makerId) {
-            return
+            throw new Error('only party buying with lumens can initiate settlement')
         }
         initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
     } else {
         if (hostConfiguration.consumerId !== acceptance.body.takerId) {
-            return
+            throw new Error('only party buying with lumens can initiate settlement')
         }
         initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
