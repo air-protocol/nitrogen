@@ -1,3 +1,6 @@
+## Maker as Buyer
+---
+
 ### Proposal
 ~~~
 { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 100, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : []}
@@ -15,7 +18,7 @@
 
 ### Settlement
 ~~~
-{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}
+{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}
 ~~~
 
 ### Fulfillment 
@@ -23,3 +26,25 @@
 { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfilment" : "account transfer", "previousHash" : {"type" : "Buffer","data":[225,115,25,35,101,215,158,46,73,95,216,210,123,67,52,231,17,190,51,145,198,195,135,142,219,77,187,26,204,252,49,101]}}
 ~~~
 
+## Taker as Buyer
+---
+
+### Proposal
+~~~
+{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "peanuts", "offerAmount" : 100, "requestAsset" : "native", "requestAmount" : 200, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : []}
+~~~
+
+### AcceptOffer
+~~~
+{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "peanuts", "offerAmount" : 100, "requestAsset" : "native", "requestAmount" : 200, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : {"type" : "Buffer","data" : [179,199,67,231,45,106,180,114,169,154,50,66,84,185,248,159,86,155,186,130,99,208,115,21,47,85,96,126,208,18,240,74]}}
+~~~
+
+### ProposalResolved
+~~~
+{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : {"type" : "Buffer","data" : [179,199,67,231,45,106,180,114,169,154,50,66,84,185,248,159,86,155,186,130,99,208,115,21,47,85,96,126,208,18,240,74]}}
+~~~
+
+### Settlement
+~~~
+{ "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}
+~~~

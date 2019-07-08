@@ -52,7 +52,7 @@ const processProposals = (proposals) => {
 const processProposalResolved = async (param, proposals, keys) => {
     let resolveBody = JSON.parse(param)
     let proposal = proposals.get(resolveBody.requestId)
-    if(! proposal) {
+    if (!proposal) {
         console.log("Unable to find proposal")
         return
     }
@@ -150,25 +150,36 @@ const processAcceptProposal = async (param, proposals, keys) => {
 const processSettleProposal = async (param, proposals) => {
     let settlement = JSON.parse(param)
     let proposal = proposals.get(settlement.requestId)
-    if(! proposal) {
+    if (!proposal) {
         console.log('Unable to locate proposal')
         return
     }
-    if (! proposal.resolution) {
+    if (!proposal.resolution) {
         console.log('Proposal is not resolved')
         return
     }
     let acceptance = undefined
-    for(i = 0; i < proposal.acceptances.length; i++) {
+    for (i = 0; i < proposal.acceptances.length; i++) {
         if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
             acceptance = proposal.acceptances[i]
         }
     }
-    if (! acceptance) {
+    if (!acceptance) {
         console.log('Proposal did not resolve an acceptance')
         return
     }
-    initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
+    if (proposal.body.offerAsset === 'native') {
+        if (hostConfiguration.consumerId !== proposal.body.makerId) {
+            throw new Error('only party buying with lumens can initiate settlement')
+        }
+        initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
+    } else {
+        if (hostConfiguration.consumerId !== acceptance.body.takerId) {
+            throw new Error('only party buying with lumens can initiate settlement')
+        }
+        initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
+    }
+
 }
 
 const processCounterOffer = async (param, proposals, keys) => {
@@ -276,7 +287,7 @@ const processTransactionHistory = async (accountId) => {
     const records = await transactionHistory(accountId)
     records.forEach((item) => {
         console.log('\n' + 'Source Account: ' + item.source_account)
-        console.log('Source Account Sequence: '+ item.source_account_sequence)
+        console.log('Source Account Sequence: ' + item.source_account_sequence)
         console.log('Created At: ' + item.created_at)
         console.log('Memo: ' + item.memo)
         console.log('Successful: ' + item.successful)
