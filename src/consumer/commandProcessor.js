@@ -123,8 +123,14 @@ const processSettleProposal = async (param, proposals) => {
         return
     }
     if (proposal.body.offerAsset === 'native') {
+        if (hostConfiguration.consumerId !== proposal.body.makerId) {
+            return
+        }
         initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
     } else {
+        if (hostConfiguration.consumerId !== acceptance.body.takerId) {
+            return
+        }
         initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
 

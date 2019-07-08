@@ -1,11 +1,10 @@
 const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
-const uuid = require('uuid')
 const argv = require('yargs').argv
 const { decryptMessage, verifyMessage } = require('../encrypt')
 const logger = require('../logging')
 
-const consumerId = argv.consumerId || uuid()
+const consumerId = hostConfiguration.consumerId
 let messageUUIDs = []
 
 const messageSeen = (messageUUID) => {

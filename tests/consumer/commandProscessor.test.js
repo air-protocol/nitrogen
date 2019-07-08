@@ -21,6 +21,7 @@ const { processSettleProposal } = require('../../src/consumer/commandProcessor')
 
 test('processSettleProposal calls initiateSettlement on chain when proposal is resolved (taker as buyer)', async () => {
     //Assemble
+    config.consumerId = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}'
     const buyerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
     const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
@@ -40,8 +41,43 @@ test('processSettleProposal calls initiateSettlement on chain when proposal is r
     expect(chain.initiateSettlement.mock.calls[0][4]).toEqual(requestAmount)
 })
 
+test('processSettleProposal does not call initiateSettlement on chain when caller is not the buyer (taker as buyer)', async () => {
+    //Assemble
+    config.consumerId = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const settlementJson = '{ "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}'
+    const buyerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
+    const sellerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const challengeStake = 100
+    const requestAmount = 200
+
+    //Action
+    await processSettleProposal(settlementJson, proposals)
+
+    //Assert
+    expect(chain.initiateSettlement).not.toBeCalled()
+})
+
+test('processSettleProposal does not call initiateSettlement on chain when caller is not the buyer', async () => {
+    //Assemble
+    config.consumerId = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
+    const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
+    const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
+    const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const challengeStake = 100
+    const offerAmount = 200
+
+    //Action
+    await processSettleProposal(settlementJson, takerBuyerProposals)
+
+    //Assert
+    expect(chain.initiateSettlement).not.toBeCalled()
+})
+
 test('processSettleProposal calls initiateSettlement on chain when proposal is resolved', async () => {
     //Assemble
+    config.consumerId = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
     const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
     const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
@@ -63,6 +99,7 @@ test('processSettleProposal calls initiateSettlement on chain when proposal is r
 
 test('processSettleProposal doest not call initiateSettlement when proposal is missing', async () => {
     //Assemble
+    config.consumerId = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
 
     //Action
@@ -72,8 +109,9 @@ test('processSettleProposal doest not call initiateSettlement when proposal is m
     expect(chain.initiateSettlement).not.toBeCalled()
 })
 
-test('processSettleProposal doest not call initiateSettlement when proposal is not resolved', async () => {
+test('processSettleProposal does not call initiateSettlement when proposal is not resolved', async () => {
     //Assemble
+    config.consumerId = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
     const unresolvedProposals = new Map(JSON.parse(proposalsJson))
     unresolvedProposals.get('abc1234').resolution = undefined
@@ -87,6 +125,7 @@ test('processSettleProposal doest not call initiateSettlement when proposal is n
 
 test('processSettleProposal doest not call initiateSettlement when proposal is resolved without a taker', async () => {
     //Assemble
+    config.consumerId = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
     const unresolvedProposals = new Map(JSON.parse(proposalsJson))
     unresolvedProposals.get('abc1234').resolution.takerId = ''
