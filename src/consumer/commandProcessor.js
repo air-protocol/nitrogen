@@ -28,6 +28,7 @@ const processProposal = async (param, proposals, keys) => {
     proposal.counterOffers = []
     proposal.acceptances = []
     proposal.rejections = []
+    proposal.fulfillments = []
     proposals.set(proposal.body.requestId, proposal)
 }
 
@@ -81,7 +82,6 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
 
 const processFulfillment = async (param, proposals, keys) => {
     //previous hash is of acceptance
-    //TODO fulfillments are attached to acceptance (ie. acceptance.fulfillments)
     let fulfillmentBody = JSON.parse(param)
     let proposal = proposals.get(fulfillmentBody.requestId)
     if(! proposal) {
@@ -118,6 +118,7 @@ const processFulfillment = async (param, proposals, keys) => {
             copyMessage = JSON.parse(JSON.stringify(message))
             message = await encryptMessage(message, recipientKey)
             sendMessage('fulfillment', message)
+            proposal.fulfillments.push(recipientKey)
         } catch (e) {
             console.log('unable to sign and encrypt: ' + e)
         }
@@ -249,6 +250,19 @@ const processOfferHistory = (param, proposals) => {
             console.log('offer amount: ' + acceptance.body.offerAmount)
             console.log('request asset: ' + acceptance.body.requestAsset)
             console.log('request amount: ' + acceptance.body.requestAmount)
+            console.log('---------------------------------')
+        })
+        proposals.fulfillments.forEach((fulfillment) => {
+            console.log('---------------------------------')
+            console.log('Fulfillment')
+            console.log('from public key: ' + JSON.stringify(fulfillment.publicKey))
+            console.log('request: ' + fulfillment.body.requestId)
+            console.log('maker id: ' + fulfillment.body.makerId)
+            console.log('taker id: ' + fulfillment.body.takerId)
+            console.log('offer asset: ' + fulfillment.body.offerAsset)
+            console.log('offer amount: ' + fulfillment.body.offerAmount)
+            console.log('request asset: ' + fulfillment.body.requestAsset)
+            console.log('request amount: ' + fulfillment.body.requestAmount)
             console.log('---------------------------------')
         })
         if (proposal.resolution) {
