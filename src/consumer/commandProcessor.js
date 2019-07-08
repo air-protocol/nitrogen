@@ -118,7 +118,7 @@ const processFulfillment = async (param, proposals, keys) => {
             copyMessage = JSON.parse(JSON.stringify(message))
             message = await encryptMessage(message, recipientKey)
             sendMessage('fulfillment', message)
-            proposal.fulfillments.push(recipientKey)
+            proposal.fulfillments.push(copyMessage)
         } catch (e) {
             console.log('unable to sign and encrypt: ' + e)
         }
@@ -259,10 +259,8 @@ const processOfferHistory = (param, proposals) => {
             console.log('request: ' + fulfillment.body.requestId)
             console.log('maker id: ' + fulfillment.body.makerId)
             console.log('taker id: ' + fulfillment.body.takerId)
-            console.log('offer asset: ' + fulfillment.body.offerAsset)
-            console.log('offer amount: ' + fulfillment.body.offerAmount)
-            console.log('request asset: ' + fulfillment.body.requestAsset)
-            console.log('request amount: ' + fulfillment.body.requestAmount)
+            console.log('message: ' + fulfillment.body.message)
+            console.log('fulfullment: ' + JSON.stringify(fulfillment.body.fulfillment))
             console.log('---------------------------------')
         })
         if (proposal.resolution) {
