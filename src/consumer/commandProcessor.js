@@ -2,6 +2,7 @@ const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { proposalSchema, negotiationSchema, proposalResolvedSchema } = require('../models/schemas')
 const { initiateSettlement, transactionHistory } = require('./chain')
+const hostConfiguration = require('../config/config')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -121,7 +122,7 @@ const processSettleProposal = async (param, proposals) => {
         console.log('Proposal did not resolve an acceptance')
         return
     }
-    initiateSettlement(settlement.secret, acceptance.body.challengeStake, acceptance.body.offerAmount)
+    initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
 }
 
 const processCounterOffer = async (param, proposals, keys) => {
