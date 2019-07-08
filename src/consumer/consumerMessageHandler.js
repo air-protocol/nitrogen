@@ -29,6 +29,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
         proposal.counterOffers = []
         proposal.rejections = []
         proposal.acceptances = []
+        proposal.fulfillments = []
         proposals.set(proposal.body.requestId, proposal)
     }
 }
@@ -130,4 +131,17 @@ const consumerRejectHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler}
+const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let fulfillmentMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (!fulfillmentMessage) {
+            return
+        }
+        //TODO verify structure and attach to netgotiation
+        proposals.fulfillments.push(fulfillmentMessage)
+    } catch (e) {
+        logger.warn("unable to process inbound fulfillment: " + e)
+    }
+}
+
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler }
