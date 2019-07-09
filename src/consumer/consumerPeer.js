@@ -7,7 +7,6 @@ const { consumerAddMeHandler,
     consumerCounterOfferHandler,
     consumerProposalHandler,
     consumerAcceptHandler,
-    consumerRejectHandler,
     consumerProposalResolvedHandler,
     consumerFulfillmentHandler } = require('./consumerMessageHandler')
 
@@ -45,9 +44,6 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             })
             peerSocket.on('proposal', (proposal) => {
                 consumerProposalHandler(proposal, proposals, keys)
-            })
-            peerSocket.on('reject', (rejectMessage) => {
-                consumerRejectHandler(rejectMessage, proposals, keys)
             })
             peerSocket.on('accept', (acceptMessage) => {
                 consumerAcceptHandler(acceptMessage, proposals, keys)

@@ -1,6 +1,5 @@
 const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
-const argv = require('yargs').argv
 const { decryptMessage, verifyMessage } = require('../encrypt')
 const logger = require('../logging')
 
@@ -114,23 +113,6 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-const consumerRejectHandler = async (peerMessage, proposals, keys) => {
-    try {
-        let rejectMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (!rejectMessage) {
-            return
-        }
-        let proposal = proposals.get(rejectMessage.body.requestId)
-        if (!proposal) {
-            logger.warn("Unable to locate original proposal for inbound rejection")
-            return
-        }
-        proposal.rejections.push(rejectMessage)
-    } catch (e) {
-        logger.warn("unable to process inbound rejection: " + e)
-    }
-}
-
 const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
     try {
         let fulfillmentMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -144,4 +126,4 @@ const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerRejectHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler }
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler }
