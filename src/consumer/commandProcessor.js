@@ -80,31 +80,32 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
     return copyMessage
 }
 
-const processFulfillment = async (param, proposals, keys) => {
-    //previous hash is of acceptance
-    let fulfillmentBody = JSON.parse(param)
-    let proposal = proposals.get(fulfillmentBody.requestId)
-    if(! proposal) {
-        console.log('Unable to locate proposal')
-        return
+const getResolvedAcceptance = (requestId, proposals) => {
+    let proposal = proposals.get(requestId)
+    if (!proposal) {
+        throw new Error('Unable to locate proposal')
     }
-    if (! proposal.resolution) {
-        console.log('Proposal is not resolved')
-        return
+    if (!proposal.resolution) {
+        throw new Error('Proposal is not resolved')
     }
     let acceptance = undefined
-    for(i = 0; i < proposal.acceptances.length; i++) {
+    for (i = 0; i < proposal.acceptances.length; i++) {
         if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
             acceptance = proposal.acceptances[i]
         }
     }
-    if (! acceptance) {
-        console.log('Proposal did not resolve an acceptance')
-        return
+    if (!acceptance) {
+        throw new Error('Proposal did not resolve an acceptance')
     }
+    return { proposal, acceptance }
+}
+
+const processFulfillment = async (param, proposals, keys) => {
+    //previous hash is of acceptance
+    let fulfillmentBody = JSON.parse(param)
+    let {proposal, acceptance}  = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
     let recipientKey
-    if(JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey))
-    {
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -149,35 +150,18 @@ const processAcceptProposal = async (param, proposals, keys) => {
 
 const processSettleProposal = async (param, proposals) => {
     let settlement = JSON.parse(param)
-    let proposal = proposals.get(settlement.requestId)
-    if (!proposal) {
-        console.log('Unable to locate proposal')
-        return
-    }
-    if (!proposal.resolution) {
-        console.log('Proposal is not resolved')
-        return
-    }
-    let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
-        }
-    }
-    if (!acceptance) {
-        console.log('Proposal did not resolve an acceptance')
-        return
-    }
+    let { proposal, acceptance } = getResolvedAcceptance(settlement.requestId, proposals)
+    let escrowPair
     if (proposal.body.offerAsset === 'native') {
         if (hostConfiguration.consumerId !== proposal.body.makerId) {
             throw new Error('only party buying with lumens can initiate settlement')
         }
-        initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
+        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
     } else {
         if (hostConfiguration.consumerId !== acceptance.body.takerId) {
             throw new Error('only party buying with lumens can initiate settlement')
         }
-        initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
+        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
 
 }

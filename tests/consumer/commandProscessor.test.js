@@ -53,7 +53,7 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
 
     //Action
     try {
-    await processSettleProposal(settlementJson, proposals)
+        await processSettleProposal(settlementJson, proposals)
     } catch (e) {
         //noop
     }
@@ -150,7 +150,11 @@ test('processSettleProposal doest not call initiateSettlement when proposal is m
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
 
     //Action
-    await processSettleProposal(settlementJson, new Map())
+    try {
+        await processSettleProposal(settlementJson, new Map())
+    } catch (e) {
+        //noop
+    }
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()
@@ -164,7 +168,11 @@ test('processSettleProposal does not call initiateSettlement when proposal is no
     unresolvedProposals.get('abc1234').resolution = undefined
 
     //Action
-    await processSettleProposal(settlementJson, unresolvedProposals)
+    try {
+        await processSettleProposal(settlementJson, unresolvedProposals)
+    } catch (e) {
+        //noop
+    }
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()
@@ -178,7 +186,11 @@ test('processSettleProposal doest not call initiateSettlement when proposal is r
     unresolvedProposals.get('abc1234').resolution.takerId = ''
 
     //Action
-    await processSettleProposal(settlementJson, unresolvedProposals)
+    try {
+        await processSettleProposal(settlementJson, unresolvedProposals)
+    } catch (e) {
+        //noop
+    }
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()

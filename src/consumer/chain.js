@@ -98,6 +98,7 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
     const escrowPair = await createEscrow(server, buyerPair, challengeStake, nativeAmount)
 
     await configureEscrow(server, buyerPair, escrowPair, sellerKey, juryKey)
+    return escrowPair
 }
 
 const transactionHistory = async (accountId) => {
