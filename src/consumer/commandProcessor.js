@@ -27,7 +27,6 @@ const processProposal = async (param, proposals, keys) => {
 
     proposal.counterOffers = []
     proposal.acceptances = []
-    proposal.rejections = []
     proposal.fulfillments = []
     proposals.set(proposal.body.requestId, proposal)
 }
@@ -122,17 +121,6 @@ const processFulfillment = async (param, proposals, keys) => {
         } catch (e) {
             console.log('unable to sign and encrypt: ' + e)
         }
-    }
-}
-
-const processRejectProposal = async (param, proposals, keys) => {
-    let rejectBody = JSON.parse(param)
-    let proposal = proposals.get(rejectBody.requestId)
-    if (proposal) {
-        let rejectionMessage = await processNegotiationMessage(rejectBody, proposal, keys, 'reject')
-        proposal.rejections.push(rejectionMessage)
-    } else {
-        console.log('Unable to match rejection to original proposal')
     }
 }
 
@@ -237,19 +225,6 @@ const processOfferHistory = (param, proposals) => {
             console.log('request amount: ' + counterOffer.body.requestAmount)
             console.log('---------------------------------')
         })
-        proposal.rejections.forEach((rejection) => {
-            console.log('---------------------------------')
-            console.log('Rejection')
-            console.log('from public key: ' + JSON.stringify(rejection.publicKey))
-            console.log('request: ' + rejection.body.requestId)
-            console.log('maker id: ' + rejection.body.makerId)
-            console.log('taker id: ' + rejection.body.takerId)
-            console.log('offer asset: ' + rejection.body.offerAsset)
-            console.log('offer amount: ' + rejection.body.offerAmount)
-            console.log('request asset: ' + rejection.body.requestAsset)
-            console.log('request amount: ' + rejection.body.requestAmount)
-            console.log('---------------------------------')
-        })
         proposal.acceptances.forEach((acceptance) => {
             console.log('---------------------------------')
             console.log('Acceptance')
@@ -263,7 +238,7 @@ const processOfferHistory = (param, proposals) => {
             console.log('request amount: ' + acceptance.body.requestAmount)
             console.log('---------------------------------')
         })
-        proposals.fulfillments.forEach((fulfillment) => {
+        proposal.fulfillments.forEach((fulfillment) => {
             console.log('---------------------------------')
             console.log('Fulfillment')
             console.log('from public key: ' + JSON.stringify(fulfillment.publicKey))
@@ -296,4 +271,4 @@ const processTransactionHistory = async (accountId) => {
     })
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processRejectProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment }
