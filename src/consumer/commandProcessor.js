@@ -238,7 +238,7 @@ const processOfferHistory = (param, proposals) => {
             console.log('request amount: ' + acceptance.body.requestAmount)
             console.log('---------------------------------')
         })
-        proposals.fulfillments.forEach((fulfillment) => {
+        proposal.fulfillments.forEach((fulfillment) => {
             console.log('---------------------------------')
             console.log('Fulfillment')
             console.log('from public key: ' + JSON.stringify(fulfillment.publicKey))

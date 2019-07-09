@@ -3,7 +3,8 @@ const fetch = require('node-fetch')
 const logger = require('./clientLogging')
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
-    const operationFees = .00004 // need to calculate instead of statically define
+    const operationFees = .00004 
+    // TODO: need to calculate instead of statically define
 
     let buyerAccount
     try {
