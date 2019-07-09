@@ -63,15 +63,6 @@ const acceptHandler = (peerMessage) => {
     return false
 }
 
-const rejectHandler = (peerMessage) => {
-    if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard rejection uuid: ' + peerMessage.uuid)
-        serverSocket.emit('reject', peerMessage)
-        return true
-    }
-    return false
-}
-
 const fulfillmentHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard fulfillment uuid: ' + peerMessage.uuid)
@@ -101,4 +92,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, rejectHandler, proposalResolvedHandler, fulfillmentHandler }
+module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler }
