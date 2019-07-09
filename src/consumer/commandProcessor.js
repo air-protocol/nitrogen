@@ -1,6 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema } = require('../models/schemas')
+const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema } = require('../models/schemas')
 const { initiateSettlement, transactionHistory } = require('./chain')
 const hostConfiguration = require('../config/config')
 const logger = require('./clientLogging')
@@ -102,7 +102,7 @@ const getResolvedAcceptance = (requestId, proposals) => {
 const processFulfillment = async (param, proposals, keys) => {
     //previous hash is of acceptance
     let fulfillmentBody = JSON.parse(param)
-    let {proposal, acceptance}  = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
+    let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
     let recipientKey
     if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
@@ -111,17 +111,16 @@ const processFulfillment = async (param, proposals, keys) => {
     }
     if (!recipientKey) {
         throw new Error('Unable to match up hashes')
-    } else {
-        try {
-            let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
-            message = await signMessage(message, keys)
-            copyMessage = JSON.parse(JSON.stringify(message))
-            message = await encryptMessage(message, recipientKey)
-            sendMessage('fulfillment', message)
-            proposal.fulfillments.push(copyMessage)
-        } catch (e) {
-            throw new Error('unable to sign and encrypt: ' + e)
-        }
+    }
+    try {
+        let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
+        message = await signMessage(message, keys)
+        copyMessage = JSON.parse(JSON.stringify(message))
+        message = await encryptMessage(message, recipientKey)
+        sendMessage('fulfillment', message)
+        proposal.fulfillments.push(copyMessage)
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
     }
 }
 
@@ -136,7 +135,7 @@ const processAcceptProposal = async (param, proposals, keys) => {
     }
 }
 
-const processSettleProposal = async (param, proposals) => {
+const processSettleProposal = async (param, proposals, keys) => {
     let settlement = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(settlement.requestId, proposals)
     let escrowPair
@@ -150,6 +149,33 @@ const processSettleProposal = async (param, proposals) => {
             throw new Error('only party buying with lumens can initiate settlement')
         }
         escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
+    }
+    let recipientKey
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
+        recipientKey = acceptance.publicKey
+    } else {
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+    }
+    if (!recipientKey) {
+        throw new Error('Unable to match up hashes')
+    }
+    try {
+        let settlementInitiatedBody = {}
+        settlementInitiatedBody.makerId = proposal.body.makerId
+        settlementInitiatedBody.takerId = proposal.body.takerId
+        settlementInitiatedBody.requestId = proposal.body.requestId
+        settlementInitiatedBody.message = 'settlementInitiated'
+        settlementInitiatedBody.escrow = escrowPair.publicKey()
+        settlementInitiatedBody.previousHash = acceptance.hash
+
+        let message = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema)
+        message = await signMessage(message, keys)
+        copyMessage = JSON.parse(JSON.stringify(message))
+        message = await encryptMessage(message, recipientKey)
+        sendMessage('settlementInitiated', message)
+        proposal.settlementInitiated = copyMessage
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
     }
 
 }

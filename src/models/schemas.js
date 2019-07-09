@@ -51,4 +51,15 @@ const fulfillmentSchema = {
         "previousHash": { "type": "object" }
     }
 }
-module.exports = { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema }
+
+const settlementInitiatedSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "escrow": { "type": "string" },
+        "previousHash": { "type": "object" }
+    }
+}
+module.exports = { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema }

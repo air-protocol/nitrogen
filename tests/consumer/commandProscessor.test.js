@@ -1,8 +1,17 @@
 jest.mock('../../src/consumer/chain')
 jest.mock('../../src/config/config')
+jest.mock('../../src/encrypt')
+jest.mock('../../src/consumer/consumerPeer')
 
 const chain = require('../../src/consumer/chain')
 const config = require('../../src/config/config')
+const encrypt = require('../../src/encrypt')
+const consumerPeer = require('../../src/consumer/consumerPeer')
+
+consumerPeer.buildMessage.mockReturnValue({})
+encrypt.encryptMessage.mockReturnValue({})
+encrypt.signMessage.mockReturnValue({})
+chain.initiateSettlement.mockReturnValue({publicKey: () => 'escrowPublicKey'})
 
 config.juryKey = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
 
@@ -11,6 +20,10 @@ const proposals = new Map(JSON.parse(proposalsJson))
 
 const takerBuyerProposalsJson = '[["abc1234",{"uuid":"b8b65006-a4c6-4ef1-b83c-9c5bcd2030f1","publicKey":{"type":"Buffer","data":[4,194,61,71,186,13,17,200,215,174,137,182,233,19,166,107,0,73,158,145,50,54,236,45,97,1,15,56,142,186,148,246,173,153,10,80,246,238,147,138,133,58,163,32,140,73,163,116,79,54,250,127,32,19,167,180,47,31,200,88,56,205,245,123,138]},"body":{"requestId":"abc1234","makerId":"GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3","offerAsset":"peanuts","offerAmount":100,"requestAsset":"native","requestAmount":200,"conditions":[],"juryPool":"ghi1234","challengeStake":100,"audience":[]},"makerId":"GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3","hash":{"type":"Buffer","data":[179,199,67,231,45,106,180,114,169,154,50,66,84,185,248,159,86,155,186,130,99,208,115,21,47,85,96,126,208,18,240,74]},"signature":{"type":"Buffer","data":[48,69,2,33,0,224,117,194,120,200,158,199,148,13,66,144,120,115,187,246,115,140,54,106,72,68,124,102,48,124,145,71,89,31,208,19,0,2,32,95,220,223,198,77,67,145,169,14,166,42,79,132,94,19,201,17,27,207,71,110,15,50,148,189,223,158,242,84,162,134,32]},"counterOffers":[],"acceptances":[{"uuid":"87a12882-a52e-4648-9ac3-42590608d74b","publicKey":{"type":"Buffer","data":[4,66,71,102,243,102,242,27,16,108,0,61,33,98,3,240,7,11,208,128,53,102,13,181,206,61,140,220,31,108,78,200,100,85,118,6,11,79,187,151,69,22,66,101,56,124,142,92,193,11,178,236,158,138,122,156,70,5,79,45,15,145,162,188,49]},"body":{"requestId":"abc1234","makerId":"GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3","offerAsset":"peanuts","offerAmount":100,"requestAsset":"native","requestAmount":200,"conditions":[],"juryPool":"ghi1234","challengeStake":100,"audience":[],"takerId":"GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV","message":"accepted","previousHash":{"type":"Buffer","data":[179,199,67,231,45,106,180,114,169,154,50,66,84,185,248,159,86,155,186,130,99,208,115,21,47,85,96,126,208,18,240,74]}},"makerId":"GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3","takerId":"GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV","hash":{"type":"Buffer","data":[111,32,232,87,71,115,25,202,120,226,137,30,90,123,228,136,94,29,207,75,187,144,250,34,105,232,138,10,81,77,203,189]},"signature":{"type":"Buffer","data":[48,69,2,33,0,164,165,107,70,60,122,217,96,121,255,23,180,106,252,201,82,152,5,162,6,165,83,68,226,240,159,153,227,51,77,129,124,2,32,64,134,85,43,171,245,224,237,163,156,2,216,33,172,180,162,180,3,229,98,18,44,54,8,118,44,222,26,47,103,169,92]}}],"rejections":[],"resolution":{"uuid":"e22e30bf-5071-411b-b8b1-13d6cf8b52be","publicKey":{"type":"Buffer","data":[4,194,61,71,186,13,17,200,215,174,137,182,233,19,166,107,0,73,158,145,50,54,236,45,97,1,15,56,142,186,148,246,173,153,10,80,246,238,147,138,133,58,163,32,140,73,163,116,79,54,250,127,32,19,167,180,47,31,200,88,56,205,245,123,138]},"body":{"requestId":"abc1234","makerId":"GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3","takerId":"GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV","message":"resolved","previousHash":{"type":"Buffer","data":[179,199,67,231,45,106,180,114,169,154,50,66,84,185,248,159,86,155,186,130,99,208,115,21,47,85,96,126,208,18,240,74]}},"makerId":"GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3","takerId":"GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV","hash":{"type":"Buffer","data":[199,173,26,141,65,211,215,238,84,184,151,76,114,182,96,73,153,246,123,105,115,60,203,235,211,177,93,129,157,250,234,87]},"signature":{"type":"Buffer","data":[48,68,2,32,76,67,193,115,222,59,56,34,43,212,158,137,248,82,176,137,166,219,195,173,0,1,237,236,206,234,244,11,126,71,169,104,2,32,64,127,191,85,223,57,188,9,177,16,123,232,152,150,28,134,233,95,203,15,161,137,37,158,212,192,194,218,55,16,207,236]}}}]]'
 const takerBuyerProposals = new Map(JSON.parse(takerBuyerProposalsJson))
+
+const publicKey = new Buffer('public')
+const privateKey = new Buffer('private')
+const keys = { publicKey, privateKey }
 
 
 afterEach(() => {
@@ -30,7 +43,7 @@ test('processSettleProposal calls initiateSettlement on chain when proposal is r
     const requestAmount = 200
 
     //Action
-    await processSettleProposal(settlementJson, takerBuyerProposals)
+    await processSettleProposal(settlementJson, takerBuyerProposals, keys)
 
     //Assert
     expect(chain.initiateSettlement).toBeCalled()
@@ -53,7 +66,7 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
 
     //Action
     try {
-        await processSettleProposal(settlementJson, proposals)
+        await processSettleProposal(settlementJson, proposals, keys)
     } catch (e) {
         //noop
     }
@@ -74,7 +87,7 @@ test('processSettleProposal throws an error when caller is not the buyer (taker 
 
     //Action
     try {
-        await processSettleProposal(settlementJson, proposals)
+        await processSettleProposal(settlementJson, proposals, keys)
     } catch (e) {
         //Assert
         expect(e.message).toMatch('only party buying with lumens can initiate settlement')
@@ -94,7 +107,7 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
 
     //Action
     try {
-        await processSettleProposal(settlementJson, takerBuyerProposals)
+        await processSettleProposal(settlementJson, takerBuyerProposals, keys)
     } catch (e) {
         //noop
     }
@@ -115,7 +128,7 @@ test('processSettleProposal throws an error when caller is not the buyer', async
 
     //Action
     try {
-        await processSettleProposal(settlementJson, takerBuyerProposals)
+        await processSettleProposal(settlementJson, takerBuyerProposals, keys)
     } catch (e) {
         //Assert
         expect(e.message).toMatch('only party buying with lumens can initiate settlement')
@@ -133,7 +146,7 @@ test('processSettleProposal calls initiateSettlement on chain when proposal is r
     const offerAmount = 200
 
     //Action
-    await processSettleProposal(settlementJson, proposals)
+    await processSettleProposal(settlementJson, proposals, keys)
 
     //Assert
     expect(chain.initiateSettlement).toBeCalled()
@@ -151,7 +164,7 @@ test('processSettleProposal doest not call initiateSettlement when proposal is m
 
     //Action
     try {
-        await processSettleProposal(settlementJson, new Map())
+        await processSettleProposal(settlementJson, new Map(), keys)
     } catch (e) {
         //noop
     }
@@ -169,7 +182,7 @@ test('processSettleProposal does not call initiateSettlement when proposal is no
 
     //Action
     try {
-        await processSettleProposal(settlementJson, unresolvedProposals)
+        await processSettleProposal(settlementJson, unresolvedProposals, keys)
     } catch (e) {
         //noop
     }
@@ -187,7 +200,7 @@ test('processSettleProposal doest not call initiateSettlement when proposal is r
 
     //Action
     try {
-        await processSettleProposal(settlementJson, unresolvedProposals)
+        await processSettleProposal(settlementJson, unresolvedProposals, keys)
     } catch (e) {
         //noop
     }
