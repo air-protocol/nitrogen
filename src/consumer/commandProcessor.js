@@ -1,7 +1,7 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema } = require('../models/schemas')
-const { initiateSettlement, transactionHistory } = require('./chain')
+const { initiateSettlement, transactionHistory, viewEscrow } = require('./chain')
 const hostConfiguration = require('../config/config')
 const logger = require('./clientLogging')
 
@@ -284,4 +284,14 @@ const processTransactionHistory = async (accountId) => {
     })
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment }
+const processViewEscrow = async (param) => {
+    const accountResult = await viewEscrow(param)
+    console.log('\nAccount Id: ' + accountResult.account_id)
+    console.log('Sequence: ' + accountResult.sequence)
+    console.log('Balance: ' + JSON.stringify(accountResult.balances[0]))
+    for (i = 0; i < accountResult.signers.length; i++) {
+        console.log('Signer: ' + JSON.stringify(accountResult.signers[i]))
+    }
+}
+
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow }

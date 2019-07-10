@@ -90,8 +90,13 @@ const configureEscrow = async (server, buyerPair, escrowPair, sellerKey, juryKey
     await server.submitTransaction(configureEscrowTransaction)
 }
 
+const viewEscrow = async (accountId) => {
+    const server = new stellar.Server('https://horizon-testnet.stellar.org') 
+    return server.accounts().accountId(accountId).call()
+}
+
 const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org');
+    const server = new stellar.Server('https://horizon-testnet.stellar.org')
     stellar.Network.useTestNetwork()
 
     const buyerPair = stellar.Keypair.fromSecret(secret)
@@ -108,4 +113,4 @@ const transactionHistory = async (accountId) => {
     return responseJson._embedded.records
 }
 
-module.exports = { initiateSettlement, transactionHistory }
+module.exports = { initiateSettlement, transactionHistory, viewEscrow }
