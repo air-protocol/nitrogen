@@ -1,7 +1,7 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema } = require('../models/schemas')
-const { initiateSettlement, transactionHistory, viewEscrow } = require('./chain')
+const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
+const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
 const logger = require('./clientLogging')
 
@@ -97,6 +97,60 @@ const getResolvedAcceptance = (requestId, proposals) => {
         throw new Error('Proposal did not resolve an acceptance')
     }
     return { proposal, acceptance }
+}
+
+const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, amount, acceptance, proposal, keys) => {
+    transaction = await createBuyerDisburseTransaction(secret,
+        sellerKey,
+        acceptance.body.challengeStake,
+        amount,
+        proposal.settlementInitiated.body.escrow)
+
+    let signatureRequiredBody = {}
+    signatureRequiredBody.makerId = acceptance.body.makerId
+    signatureRequiredBody.takerId = acceptance.body.takerId
+    signatureRequiredBody.requestId = proposal.body.requestId
+    signatureRequiredBody.message = 'signatureRequired'
+    signatureRequiredBody.transaction = transaction
+    signatureRequiredBody.previousHash = acceptance.hash
+
+    let message = buildMessage(signatureRequiredBody, keys, signatureRequiredSchema)
+    message = await signMessage(message, keys)
+    copyMessage = JSON.parse(JSON.stringify(message))
+    message = await encryptMessage(message, recipientKey)
+    sendMessage('signatureRequired', message)
+    proposal.signatureRequired = copyMessage
+}
+
+const processDisburse = async (param, proposals, keys) => {
+    //previous hash is of acceptance
+    let disbursementBody = JSON.parse(param)
+    let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
+    let recipientKey
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
+        recipientKey = acceptance.publicKey
+    } else {
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+    }
+    if (!recipientKey) {
+        throw new Error('Unable to match up hashes')
+    }
+    if (!proposal.settlementInitiated) {
+        throw new Error('The escrow account is not established.  Initiate settlement.')
+    }
+
+    if ((proposal.body.offerAsset === 'native') && (hostConfiguration.consumerId === proposal.body.makerId)) {
+        //Buyer initiated disburse (maker is buyer)
+        processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.takerId, recipientKey, acceptance.body.offerAmount, acceptance, proposal, keys)
+    } else if ((proposal.body.requestAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.takerId)) {
+        //Buyer initiated disburse (taker is buyer)
+        processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.makerId, recipientKey, acceptance.body.requestAmount, acceptance, proposal, keys)
+    } else {
+        if (!(proposal.signatureRequired || proposal.ruling)) {
+            throw new Error('Seller cannot disburse until the buyer or jury disburses.')
+        }
+        //TODO Seller initiated disburse
+    }
 }
 
 const processFulfillment = async (param, proposals, keys) => {
@@ -269,6 +323,11 @@ const processOfferHistory = (param, proposals) => {
         console.log('Settlement initiated with escrow id: ' + proposal.settlementInitiated.body.escrow)
         console.log('---------------------------------')
     }
+    if (proposal.signatureRequired) {
+        console.log('---------------------------------')
+        console.log('The buyer issued disbursement')
+        console.log('---------------------------------')
+    }
 }
 
 const processTransactionHistory = async (accountId) => {
@@ -294,4 +353,4 @@ const processViewEscrow = async (param) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow, processDisburse }
