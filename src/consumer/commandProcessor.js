@@ -1,10 +1,9 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema } = require('../models/schemas')
+const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema } = require('../models/schemas')
 const { initiateSettlement, transactionHistory, viewEscrow } = require('./chain')
 const hostConfiguration = require('../config/config')
 const logger = require('./clientLogging')
-const stellar = require('stellar-sdk')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -80,10 +79,8 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
     return copyMessage
 }
 
-const processFulfillment = async (param, proposals, keys) => {
-    //previous hash is of acceptance
-    let fulfillmentBody = JSON.parse(param)
-    let proposal = proposals.get(fulfillmentBody.requestId)
+const getResolvedAcceptance = (requestId, proposals) => {
+    let proposal = proposals.get(requestId)
     if (!proposal) {
         throw new Error('Unable to locate proposal')
     }
@@ -99,6 +96,13 @@ const processFulfillment = async (param, proposals, keys) => {
     if (!acceptance) {
         throw new Error('Proposal did not resolve an acceptance')
     }
+    return { proposal, acceptance }
+}
+
+const processFulfillment = async (param, proposals, keys) => {
+    //previous hash is of acceptance
+    let fulfillmentBody = JSON.parse(param)
+    let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
     let recipientKey
     if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
@@ -107,17 +111,16 @@ const processFulfillment = async (param, proposals, keys) => {
     }
     if (!recipientKey) {
         throw new Error('Unable to match up hashes')
-    } else {
-        try {
-            let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
-            message = await signMessage(message, keys)
-            copyMessage = JSON.parse(JSON.stringify(message))
-            message = await encryptMessage(message, recipientKey)
-            sendMessage('fulfillment', message)
-            proposal.fulfillments.push(copyMessage)
-        } catch (e) {
-            throw new Error('unable to sign and encrypt: ' + e)
-        }
+    }
+    try {
+        let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
+        message = await signMessage(message, keys)
+        copyMessage = JSON.parse(JSON.stringify(message))
+        message = await encryptMessage(message, recipientKey)
+        sendMessage('fulfillment', message)
+        proposal.fulfillments.push(copyMessage)
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
     }
 }
 
@@ -132,34 +135,47 @@ const processAcceptProposal = async (param, proposals, keys) => {
     }
 }
 
-const processSettleProposal = async (param, proposals) => {
+const processSettleProposal = async (param, proposals, keys) => {
     let settlement = JSON.parse(param)
-    let proposal = proposals.get(settlement.requestId)
-    if (!proposal) {
-        throw new Error('Unable to locate proposal')
-    }
-    if (!proposal.resolution) {
-        throw new Error('Proposal is not resolved')
-    }
-    let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
-        }
-    }
-    if (!acceptance) {
-        throw new Error('Proposal did not resolve an acceptance')
-    }
+    let { proposal, acceptance } = getResolvedAcceptance(settlement.requestId, proposals)
+    let escrowPair
     if (proposal.body.offerAsset === 'native') {
         if (hostConfiguration.consumerId !== proposal.body.makerId) {
             throw new Error('only party buying with lumens can initiate settlement')
         }
-        initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
+        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
     } else {
         if (hostConfiguration.consumerId !== acceptance.body.takerId) {
             throw new Error('only party buying with lumens can initiate settlement')
         }
-        initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
+        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
+    }
+    let recipientKey
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
+        recipientKey = acceptance.publicKey
+    } else {
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+    }
+    if (!recipientKey) {
+        throw new Error('Unable to match up hashes')
+    }
+    try {
+        let settlementInitiatedBody = {}
+        settlementInitiatedBody.makerId = proposal.body.makerId
+        settlementInitiatedBody.takerId = acceptance.body.takerId
+        settlementInitiatedBody.requestId = proposal.body.requestId
+        settlementInitiatedBody.message = 'settlementInitiated'
+        settlementInitiatedBody.escrow = escrowPair.publicKey()
+        settlementInitiatedBody.previousHash = acceptance.hash
+
+        let message = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema)
+        message = await signMessage(message, keys)
+        copyMessage = JSON.parse(JSON.stringify(message))
+        message = await encryptMessage(message, recipientKey)
+        sendMessage('settlementInitiated', message)
+        proposal.settlementInitiated = copyMessage
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
     }
 
 }
@@ -246,6 +262,12 @@ const processOfferHistory = (param, proposals) => {
     if (proposal.resolution) {
         console.log('---------------------------------')
         console.log('Proposal resolved accepting taker id: ' + proposal.resolution.takerId)
+        console.log('---------------------------------')
+    }
+    if (proposal.settlementInitiated) {
+        console.log('---------------------------------')
+        console.log('Settlement initiated with escrow id: ' + proposal.settlementInitiated.body.escrow)
+        console.log('---------------------------------')
     }
 }
 

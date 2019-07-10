@@ -113,17 +113,58 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
+const proposalResolvedWithAcceptance = (proposal) => {
+    if (!(proposal && proposal.resolution)) {
+        return false
+    }
+    let acceptance = undefined
+    for (i = 0; i < proposal.acceptances.length; i++) {
+        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
+            acceptance = proposal.acceptances[i]
+        }
+    }
+    if (!acceptance) {
+        return false
+    }
+    return true
+}
+
 const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
     try {
         let fulfillmentMessage = await negotiationMessageProcessor(peerMessage, keys)
         if (!fulfillmentMessage) {
             return
         }
-        //TODO verify structure and attach to netgotiation
-        proposals.fulfillments.push(fulfillmentMessage)
+        let proposal = proposals.get(fulfillmentMessage.body.requestId)
+
+        if (!proposalResolvedWithAcceptance(proposal)) {
+            logger.warn("unable to locate proposal that resolved with acceptance for inbound fulfillment")
+            return
+        }
+        proposal.fulfillments.push(fulfillmentMessage)
     } catch (e) {
         logger.warn("unable to process inbound fulfillment: " + e)
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler }
+const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let settlementInitiatedMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (! settlementInitiatedMessage) {
+            return
+        }
+        let proposal = proposals.get(settlementInitiatedMessage.body.requestId)
+        if (!settlementInitiatedMessage) {
+            return
+        }
+        if (!proposalResolvedWithAcceptance(proposal)) {
+            logger.warn("unable to locate proposal that resolved with acceptance for inbound settlementInitiated")
+            return
+        }
+        proposal.settlementInitiated = settlementInitiatedMessage
+    } catch (e) {
+        logger.warn("unable to process inbound settlementInitiated: " + e)
+    }
+}
+
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler }
