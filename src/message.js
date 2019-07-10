@@ -72,6 +72,15 @@ const fulfillmentHandler = (peerMessage) => {
     return false
 }
 
+const settlementInitiatedHandler = (peerMessage) => {
+    if (!messageSeen(peerMessage.uuid)) {
+        logger.info('heard settlementInitiated uuid: ' + peerMessage.uuid)
+        serverSocket.emit('settlementInitiated', peerMessage)
+        return true
+    }
+    return false
+}
+
 const addMeHandler = (peerMessage) => {
     if (peerMessage.address === thisAddress) {
         return false
@@ -92,4 +101,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler }
+module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler }

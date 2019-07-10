@@ -1,6 +1,14 @@
 const uuid = require('uuid')
 const localCache = require('./cache')
-const { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler} = require('./message')
+const { addMeHandler,
+    counterOfferHandler,
+    pingHandler,
+    proposalHandler,
+    acceptHandler,
+    proposalResolvedHandler,
+    fulfillmentHandler,
+    settlementInitiatedHandler } = require('./message')
+
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
@@ -27,6 +35,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.on('accept', acceptHandler)
             peerSocket.on('resolved', proposalResolvedHandler)
             peerSocket.on('fulfillment', fulfillmentHandler)
+            peerSocket.on('settlementInitiated', settlementInitiatedHandler)
 
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)
@@ -38,7 +47,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             clientio.peers = clientio.peers.filter((peer) => { return peer !== peerSocket })
             connectToPeers()
         })
-    }) 
+    })
     return promise
 }
 

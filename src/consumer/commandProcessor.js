@@ -162,7 +162,7 @@ const processSettleProposal = async (param, proposals, keys) => {
     try {
         let settlementInitiatedBody = {}
         settlementInitiatedBody.makerId = proposal.body.makerId
-        settlementInitiatedBody.takerId = proposal.body.takerId
+        settlementInitiatedBody.takerId = acceptance.body.takerId
         settlementInitiatedBody.requestId = proposal.body.requestId
         settlementInitiatedBody.message = 'settlementInitiated'
         settlementInitiatedBody.escrow = escrowPair.publicKey()
@@ -262,6 +262,12 @@ const processOfferHistory = (param, proposals) => {
     if (proposal.resolution) {
         console.log('---------------------------------')
         console.log('Proposal resolved accepting taker id: ' + proposal.resolution.takerId)
+        console.log('---------------------------------')
+    }
+    if (proposal.settlementInitiated) {
+        console.log('---------------------------------')
+        console.log('Settlement initiated with escrow id: ' + proposal.settlementInitiated.body.escrow)
+        console.log('---------------------------------')
     }
 }
 

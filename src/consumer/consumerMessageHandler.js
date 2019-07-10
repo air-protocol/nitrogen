@@ -150,6 +150,9 @@ const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
 const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) => {
     try {
         let settlementInitiatedMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (! settlementInitiatedMessage) {
+            return
+        }
         let proposal = proposals.get(settlementInitiatedMessage.body.requestId)
         if (!settlementInitiatedMessage) {
             return
@@ -164,4 +167,4 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler }
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler }
