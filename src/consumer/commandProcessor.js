@@ -343,8 +343,13 @@ const processTransactionHistory = async (accountId) => {
     })
 }
 
-const processViewEscrow = async (param) => {
-    const accountResult = await viewEscrow(param)
+const processViewEscrow = async (param, proposals) => {
+    const proposal = proposals.get(param)
+    if (!proposal.settlementInitiated) {
+        throw new Error('The settlement has not been initiated yet. No escrow account to view')
+    }
+    const escrowId = proposal.settlementInitiated.body.escrow
+    const accountResult = await viewEscrow(escrowId)
     console.log('\nAccount Id: ' + accountResult.account_id)
     console.log('Sequence: ' + accountResult.sequence)
     console.log('Balance: ' + JSON.stringify(accountResult.balances[0]))
