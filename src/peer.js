@@ -7,7 +7,8 @@ const { addMeHandler,
     acceptHandler,
     proposalResolvedHandler,
     fulfillmentHandler,
-    settlementInitiatedHandler } = require('./message')
+    settlementInitiatedHandler,
+    signatureRequiredHandler } = require('./message')
 
 const getDirectoryFromBootNodes = require('./boot')
 const hostConfiguration = require('./config/config')
@@ -36,6 +37,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.on('resolved', proposalResolvedHandler)
             peerSocket.on('fulfillment', fulfillmentHandler)
             peerSocket.on('settlementInitiated', settlementInitiatedHandler)
+            peerSocket.on('signatureRequired', signatureRequiredHandler)
 
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)

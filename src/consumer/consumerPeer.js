@@ -9,7 +9,8 @@ const { consumerAddMeHandler,
     consumerAcceptHandler,
     consumerProposalResolvedHandler,
     consumerFulfillmentHandler,
-    consumerSettlementInitiatedHandler } = require('./consumerMessageHandler')
+    consumerSettlementInitiatedHandler,
+    consumerSignatureRequiredHandler } = require('./consumerMessageHandler')
 
 const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true })
@@ -57,6 +58,9 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             })
             peerSocket.on('settlementInitiated', (settlementInitiatedMessage) => {
                 consumerSettlementInitiatedHandler(settlementInitiatedMessage, proposals, keys)
+            })
+            peerSocket.on('signatureRequired', (signatureRequiredMessage) => {
+                consumerSignatureRequiredHandler(signatureRequiredMessage, proposals, keys)
             })
             resolve(peerSocket)
         })

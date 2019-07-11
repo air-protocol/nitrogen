@@ -2,8 +2,11 @@ const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
 const logger = require('./clientLogging')
 
+//TODO remove for production
+stellar.Network.useTestNetwork()
+
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
-    const operationFees = .00004 
+    const operationFees = .00004
     // TODO: need to calculate instead of statically define
 
     let buyerAccount
@@ -11,7 +14,7 @@ const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => 
         buyerAccount = await server.loadAccount(buyerPair.publicKey())
     } catch (e) {
         logger.error('unable to load buyer account: ' + e)
-        throw(e)
+        throw (e)
     }
 
     const escrowPair = stellar.Keypair.random()
@@ -43,7 +46,7 @@ const configureEscrow = async (server, buyerPair, escrowPair, sellerKey, juryKey
         escrowAccount = await server.loadAccount(escrowPair.publicKey())
     } catch (e) {
         logger.error('unable to load escrow account: ' + e)
-        throw(e) 
+        throw (e)
     }
 
     const thresholds = {
@@ -91,13 +94,12 @@ const configureEscrow = async (server, buyerPair, escrowPair, sellerKey, juryKey
 }
 
 const viewEscrow = async (accountId) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org') 
+    const server = new stellar.Server('https://horizon-testnet.stellar.org')
     return server.accounts().accountId(accountId).call()
 }
 
 const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
     const server = new stellar.Server('https://horizon-testnet.stellar.org')
-    stellar.Network.useTestNetwork()
 
     const buyerPair = stellar.Keypair.fromSecret(secret)
 
@@ -107,10 +109,44 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
     return escrowPair
 }
 
+const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake, nativeAmount, escrowKey) => {
+    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const escrowAccount = await server.loadAccount(escrowKey)
+
+    const buyerPair = stellar.Keypair.fromSecret(secret)
+
+    const paymentToSeller = {
+        destination: sellerKey,
+        asset: stellar.Asset.native(),
+        amount: nativeAmount.toString()
+    }
+
+    const paymentToBuyer = {
+        destination: buyerPair.publicKey(),
+        asset: stellar.Asset.native(),
+        amount: challengeStake.toString()
+    }
+    //TODO platform
+
+    const txOptions = {
+        fee: await server.fetchBaseFee()
+    }
+
+    let transaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
+        .addOperation(stellar.Operation.payment(paymentToSeller))
+        .addOperation(stellar.Operation.payment(paymentToBuyer))
+        .setTimeout(stellar.TimeoutInfinite)
+        .build()
+
+    transaction.sign(buyerPair)
+
+    return transaction.toEnvelope().toXDR('base64')
+}
+
 const transactionHistory = async (accountId) => {
     const response = await fetch(`https://horizon-testnet.stellar.org/accounts/${accountId}/transactions`)
     const responseJson = await response.json()
     return responseJson._embedded.records
 }
 
-module.exports = { initiateSettlement, transactionHistory, viewEscrow }
+module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction }

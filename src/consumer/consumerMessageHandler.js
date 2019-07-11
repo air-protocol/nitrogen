@@ -167,4 +167,24 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler }
+const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let signatureRequiredMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (! signatureRequiredMessage) {
+            return
+        }
+        let proposal = proposals.get(signatureRequiredMessage.body.requestId)
+        if (!signatureRequiredMessage) {
+            return
+        }
+        if (!proposalResolvedWithAcceptance(proposal)) {
+            logger.warn("unable to locate proposal that resolved with acceptance for inbound signatureRequired")
+            return
+        }
+        proposal.signatureRequired = signatureRequiredMessage
+    } catch (e) {
+        logger.warn("unable to process inbound signatureRequired: " + e)
+    }
+}
+
+module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler }

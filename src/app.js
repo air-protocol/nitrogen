@@ -12,7 +12,8 @@ const { addMeHandler,
     acceptHandler,
     proposalResolvedHandler,
     fulfillmentHandler,
-    settlementInitiatedHandler } = require('./message')
+    settlementInitiatedHandler,
+    signatureRequiredHandler } = require('./message')
 
 if (hostConfiguration.refreshDirectory) {
     localCache.setKey('directory', hostConfiguration.bootNodes)
@@ -32,7 +33,6 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
     serverSocket.sockets.on('connect', (socket) => {
         logger.silly('inbound connection made')
 
-        //Add message handlers
         socket.on('directory', (message) => {
             let directory = localCache.getKey('directory')
             logger.silly('sending directory: ' + directory)
@@ -46,6 +46,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         socket.on('resolved', proposalResolvedHandler)
         socket.on('fulfillment', fulfillmentHandler)
         socket.on('settlementInitiated', settlementInitiatedHandler)
+        socket.on('signatureRequired', signatureRequiredHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()
