@@ -122,7 +122,7 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
     }
 
     const paymentToBuyer = {
-        destination: sellerKey,
+        destination: buyerPair.publicKey(),
         asset: stellar.Asset.native(),
         amount: challengeStake.toString()
     }
@@ -133,8 +133,8 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
     }
 
     let transaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
-        .addOperation(stellar.Operation.payment(paymentToBuyer))
         .addOperation(stellar.Operation.payment(paymentToSeller))
+        .addOperation(stellar.Operation.payment(paymentToBuyer))
         .setTimeout(stellar.TimeoutInfinite)
         .build()
 

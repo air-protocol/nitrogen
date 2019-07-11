@@ -139,10 +139,10 @@ const processDisburse = async (param, proposals, keys) => {
         throw new Error('The escrow account is not established.  Initiate settlement.')
     }
 
-    if ((proposal.body.offerAsset === 'native') && (hostConfiguration.consumerId === proposal.body.makerId)) {
+    if ((acceptance.body.offerAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.makerId)) {
         //Buyer initiated disburse (maker is buyer)
         processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.takerId, recipientKey, acceptance.body.offerAmount, acceptance, proposal, keys)
-    } else if ((proposal.body.requestAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.takerId)) {
+    } else if ((acceptance.body.requestAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.takerId)) {
         //Buyer initiated disburse (taker is buyer)
         processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.makerId, recipientKey, acceptance.body.requestAmount, acceptance, proposal, keys)
     } else {

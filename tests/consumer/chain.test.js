@@ -1,27 +1,29 @@
 
 jest.mock('stellar-sdk')
 const stellar = require('stellar-sdk')
-const { TransactionBuilder, Operation, Network } = jest.requireActual('stellar-sdk')
+const { TransactionBuilder, Operation, Network, Asset, Keypair, Transaction, xdr } = jest.requireActual('stellar-sdk')
 stellar.TransactionBuilder = TransactionBuilder
 stellar.Operation = Operation
 stellar.Network = Network
+stellar.Asset = Asset
+stellar.Keypair = Keypair
 
-const { initiateSettlement } = require('../../src/consumer/chain')
+const { initiateSettlement, createBuyerDisburseTransaction } = require('../../src/consumer/chain')
 
 //Assemble
 const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
 const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+const escrowSecret = 'SDQLRJVYLL2CUKXYPS3OSL6HPXKN2F47HTWRIRYCJJUUIJIKBVFQKTSV'
 const escrowPublic = 'GAQK62EZBRINSGVCWRKOTYTK3JOLKODYLI223OMPOYOHPOXHW66XG3KQ'
 const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
 const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
 const challengeStake = 10
 const nativeAmount = 200
-const accountPair = new stellar.Keypair()
-accountPair.publicKey = () => buyerPublic
-const escrowPair = new stellar.Keypair()
-escrowPair.publicKey = () => escrowPublic
-stellar.Keypair.fromSecret.mockReturnValue(accountPair)
-stellar.Keypair.random.mockReturnValue(escrowPair)
+const escrowPair = stellar.Keypair.fromSecret(escrowSecret)
+
+stellar.Keypair.random = jest.fn(function () {
+    return escrowPair
+})
 
 const buyerAccount = {
     sequenceNumber: () => 1,
@@ -75,8 +77,7 @@ test('initiateSettlement pulls account', async () => {
     await initiateSettlement(buyerSecret, sellerPublic, juryPublic, challengeStake, nativeAmount)
 
     //Assert
-    expect(stellar.Keypair.fromSecret).toBeCalledWith(buyerSecret)
-    expect(mockLoadAccount).toBeCalledWith(accountPair.publicKey())
+    expect(mockLoadAccount).toBeCalledWith(buyerPublic)
 })
 
 test('initiateSettlement creates funded escrow', async () => {
@@ -114,4 +115,25 @@ test('initiateSettlement configures escrow', async () => {
 
     expect(transaction.operations[3].signer.ed25519PublicKey).toEqual(juryPublic)
     expect(transaction.operations[3].signer.weight).toEqual(1)
+})
+
+test('createBuyerDisburseTransactionDoes', async() => {
+    //Assemble
+    const amount = 100
+    buyerKeyPair = stellar.Keypair.random()
+
+    //Action
+    const xdrTransaction = await createBuyerDisburseTransaction(buyerSecret, sellerPublic, challengeStake, amount, escrowPublic)
+
+    //Assert
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new Transaction(envelope)
+    expect(transaction.operations[0].type).toEqual('payment')
+    expect(transaction.operations[0].destination).toEqual(sellerPublic)
+    expect(transaction.operations[0].amount).toEqual('100.0000000')
+    expect(transaction.operations[1].type).toEqual('payment')
+    expect(transaction.operations[1].destination).toEqual(buyerPublic)
+    expect(transaction.operations[1].amount).toEqual('10.0000000')
+    expect(transaction.source).toEqual(escrowPublic)
 })
