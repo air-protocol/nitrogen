@@ -1,3 +1,14 @@
+const adjudicateSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "previousHash": { "type": "object" },
+        "negotiation": { "type": "object" }
+    }
+}
+
 const proposalSchema = {
     "properties": {
         "audience": { "type": "array" },
@@ -74,4 +85,4 @@ const signatureRequiredSchema = {
     }
 }
 
-module.exports = { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema }
+module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema }

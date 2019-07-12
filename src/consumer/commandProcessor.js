@@ -1,6 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
+const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
 const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
 const logger = require('./clientLogging')
@@ -29,6 +29,7 @@ const processProposal = async (param, proposals, keys) => {
     proposal.counterOffers = []
     proposal.acceptances = []
     proposal.fulfillments = []
+    proposal.adjudications = []
     proposals.set(proposal.body.requestId, proposal)
 }
 
@@ -77,6 +78,40 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
         }
     }
     return copyMessage
+}
+
+const processAdjudication = async (param, proposals, keys) => {
+    let { proposal, acceptance } = getResolvedAcceptance(param, proposals)
+    if (!proposal.settlementInitiated) {
+        throw new Error('The settlement has not yet been initiated')
+    }
+    let senderKey
+    if(proposal.body.makerId === hostConfiguration.consumerId) {
+        // Maker called adjudication
+        senderKey = proposal.body.makerId
+    } else {
+        // Taker called adjudication
+        senderKey = proposal.body.takerId
+    }
+ 
+    try {
+        let adjudicateBody = {}
+        adjudicateBody.makerId = proposal.body.makerId
+        adjudicateBody.takerId = proposal.body.takerId
+        adjudicateBody.requestId = proposal.body.requestId
+        adjudicateBody.message = 'adjudicate'
+        adjudicateBody.escrow = escrowPair.publicKey()
+        adjudicateBody.previousHash = acceptance.hash
+
+        let message = buildMessage(adjudicateBody, keys, adjudicateSchema)
+        message = await signMessage(message, keys)
+        copyMessage = JSON.parse(JSON.stringify(message))
+        message = await encryptMessage(message, hostConfiguration.juryKey)
+        sendMessage('adjudicate', message)
+        proposal.adjudicate = copyMessage
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
+    }
 }
 
 const getResolvedAcceptance = (requestId, proposals) => {
@@ -358,4 +393,4 @@ const processViewEscrow = async (param, proposals) => {
     }
 }
 
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow, processDisburse }
+module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processAdjudication, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow, processDisburse }

@@ -29,6 +29,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
         proposal.rejections = []
         proposal.acceptances = []
         proposal.fulfillments = []
+        proposal.adjudications = []
         proposals.set(proposal.body.requestId, proposal)
     }
 }
@@ -150,7 +151,7 @@ const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
 const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) => {
     try {
         let settlementInitiatedMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! settlementInitiatedMessage) {
+        if (!settlementInitiatedMessage) {
             return
         }
         let proposal = proposals.get(settlementInitiatedMessage.body.requestId)
@@ -167,10 +168,26 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
     }
 }
 
+const consumerAdjudicationHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let adjudicationMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (!adjudicationMessage) {
+            return
+        }
+        let proposal = proposals.get(adjudicationMessage.body.requestId)
+        if (!proposalResolvedWithAcceptance(proposal)) {
+            logger.warn("unable to locate proposal that resolved with acceptance for adjudication")
+        }
+        proposal.adjucation = adjudicationMessage
+    } catch (e) {
+        logger.warn("unable to process inbound adjudication: " + e)
+    }
+}
+
 const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) => {
     try {
         let signatureRequiredMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! signatureRequiredMessage) {
+        if (!signatureRequiredMessage) {
             return
         }
         let proposal = proposals.get(signatureRequiredMessage.body.requestId)
@@ -187,4 +204,4 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler }
+module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler }

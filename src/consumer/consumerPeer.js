@@ -3,7 +3,8 @@ const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const getDirectoryFromBootNodes = require('../boot')
 const logger = require('../logging')
-const { consumerAddMeHandler,
+const { consumerAdjudicationHandler,
+    consumerAddMeHandler,
     consumerCounterOfferHandler,
     consumerProposalHandler,
     consumerAcceptHandler,
@@ -61,6 +62,9 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             })
             peerSocket.on('signatureRequired', (signatureRequiredMessage) => {
                 consumerSignatureRequiredHandler(signatureRequiredMessage, proposals, keys)
+            })
+            peerSocket.on('adjudicate', (adjucationMessage) => {
+                consumerAdjudicationHandler(adjucationMessage, proposals, keys)
             })
             resolve(peerSocket)
         })

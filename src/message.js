@@ -42,7 +42,7 @@ const proposalResolvedHandler = (peerMessage) => {
         serverSocket.emit('resolved', peerMessage)
         return true
     }
-    return false 
+    return false
 }
 
 const counterOfferHandler = (peerMessage) => {
@@ -90,6 +90,15 @@ const signatureRequiredHandler = (peerMessage) => {
     return false
 }
 
+const adjudicationHandler = (peerMessage) => {
+    if (!messageSeen(peerMessage.uuid)) {
+        logger.info('heard adjudication uuid: ' + peerMessage.uuid)
+        serverSocket.emit('adjudication', peerMessage)
+        return true
+    }
+    return false
+}
+
 const addMeHandler = (peerMessage) => {
     if (peerMessage.address === thisAddress) {
         return false
@@ -110,4 +119,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler, signatureRequiredHandler }
+module.exports = { addMeHandler, adjudicationHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler, signatureRequiredHandler }
