@@ -91,8 +91,8 @@ test('initiateSettlement creates funded escrow', async () => {
 
     //Challenge stake is 10
     //Native amount paid is 200
-    //Operation fees are .00004
-    expect(transaction.operations[0].startingBalance).toEqual('210.0000400')
+    //Base is 2
+    expect(transaction.operations[0].startingBalance).toEqual('212.0000000')
 })
 
 test('initiateSettlement configures escrow', async () => {
@@ -132,8 +132,7 @@ test('createBuyerDisburseTransactionDoes', async() => {
     expect(transaction.operations[0].type).toEqual('payment')
     expect(transaction.operations[0].destination).toEqual(sellerPublic)
     expect(transaction.operations[0].amount).toEqual('100.0000000')
-    expect(transaction.operations[1].type).toEqual('payment')
+    expect(transaction.operations[1].type).toEqual('accountMerge')
     expect(transaction.operations[1].destination).toEqual(buyerPublic)
-    expect(transaction.operations[1].amount).toEqual('10.0000000')
     expect(transaction.source).toEqual(escrowPublic)
 })

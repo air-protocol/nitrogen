@@ -1,7 +1,7 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
-const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction } = require('./chain')
+const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
 const logger = require('./clientLogging')
 
@@ -124,6 +124,9 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
 
 const processDisburse = async (param, proposals, keys) => {
     //previous hash is of acceptance
+    //TODO pass in adjudications or a flag for in dispute
+    const adjudications = []
+
     let disbursementBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
     let recipientKey
@@ -138,18 +141,26 @@ const processDisburse = async (param, proposals, keys) => {
     if (!proposal.settlementInitiated) {
         throw new Error('The escrow account is not established.  Initiate settlement.')
     }
-
-    if ((acceptance.body.offerAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.makerId)) {
-        //Buyer initiated disburse (maker is buyer)
+    if (adjudications.length > 0) {
+        if (proposal.ruling && proposal.ruling.transaction) {
+            //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
+            submitDisburseTransaction(disbursementBody.secret, proposal.ruling.transaction)
+        } else {
+            throw new Error('transaction is in dispute')
+        }
+    } else if ((acceptance.body.offerAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.makerId)) {
+        //Buyer initiating disburse (maker is buyer)
         processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.takerId, recipientKey, acceptance.body.offerAmount, acceptance, proposal, keys)
     } else if ((acceptance.body.requestAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.takerId)) {
-        //Buyer initiated disburse (taker is buyer)
+        //Buyer initiating disburse (taker is buyer)
         processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.makerId, recipientKey, acceptance.body.requestAmount, acceptance, proposal, keys)
     } else {
-        if (!(proposal.signatureRequired || proposal.ruling)) {
-            throw new Error('Seller cannot disburse until the buyer or jury disburses.')
+        //Seller is signing and collecting
+        if (proposal.signatureRequired) {
+            submitDisburseTransaction(disbursementBody.secret, proposal.signatureRequired.body.transaction)
+        } else {
+            throw new Error('The party purchasing with lumens must initiate disbursement')
         }
-        //TODO Seller initiated disburse
     }
 }
 
