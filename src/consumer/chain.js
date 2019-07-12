@@ -6,8 +6,8 @@ const logger = require('./clientLogging')
 stellar.Network.useTestNetwork()
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
-    const operationFees = .00004
-    // TODO: need to calculate instead of statically define
+    //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
+    const baseAmount = 2
 
     let buyerAccount
     try {
@@ -22,7 +22,7 @@ const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => 
         fee: await server.fetchBaseFee()
     }
 
-    const total = challengeStake + nativeAmount + operationFees
+    const total = challengeStake + nativeAmount + baseAmount
 
     const escrowAccountConfig = {
         destination: escrowPair.publicKey(),
@@ -121,11 +121,10 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
         amount: nativeAmount.toString()
     }
 
-    const paymentToBuyer = {
-        destination: buyerPair.publicKey(),
-        asset: stellar.Asset.native(),
-        amount: challengeStake.toString()
+    const mergeToBuyer = {
+        destination: buyerPair.publicKey()
     }
+
     //TODO platform
 
     const txOptions = {
@@ -134,7 +133,7 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
 
     let transaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
         .addOperation(stellar.Operation.payment(paymentToSeller))
-        .addOperation(stellar.Operation.payment(paymentToBuyer))
+        .addOperation(stellar.Operation.accountMerge(mergeToBuyer))
         .setTimeout(stellar.TimeoutInfinite)
         .build()
 
@@ -143,10 +142,27 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
     return transaction.toEnvelope().toXDR('base64')
 }
 
+const submitDisburseTransaction = async (secret, xdrTransaction) => {
+    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+
+    const buyerPair = stellar.Keypair.fromSecret(secret)
+
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = stellar.xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new stellar.Transaction(envelope)
+
+    transaction.sign(buyerPair)
+    try {
+        const transactionRecord = await server.submitTransaction(transaction)
+    } catch (e) {
+        throw new Error('unable to disburse funds: ' + e.response.data.extras)
+    }
+}
+
 const transactionHistory = async (accountId) => {
     const response = await fetch(`https://horizon-testnet.stellar.org/accounts/${accountId}/transactions`)
     const responseJson = await response.json()
     return responseJson._embedded.records
 }
 
-module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction }
+module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction }
