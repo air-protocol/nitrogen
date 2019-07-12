@@ -31,6 +31,12 @@ fulfillment { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7H
 disburse { "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}
 ~~~
 
+### Seller Disburse
+~~~
+disburse { "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}
+~~~
+
+
 ## Taker as Buyer
 ---
 
@@ -57,4 +63,19 @@ settle { "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDB
 ### ViewEscrow
 ~~~
 viewEscrow GABKVQSC3AMSBWLS2QLDXIDMYW2WSHIQIHZIVCLQLFAUU2XQ3G7RVGQB
+~~~
+
+### Fulfillment 
+~~~
+fulfillment { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfilment" : "account transfer", "previousHash" : {"type" : "Buffer","data":[225,115,25,35,101,215,158,46,73,95,216,210,123,67,52,231,17,190,51,145,198,195,135,142,219,77,187,26,204,252,49,101]}}
+~~~
+
+### Buyer Disburse
+~~~
+disburse { "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}
+~~~
+
+### Seller Disburse
+~~~
+disburse { "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}
 ~~~

@@ -29,6 +29,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
         proposal.rejections = []
         proposal.acceptances = []
         proposal.fulfillments = []
+        proposal.adjudications = []
         proposals.set(proposal.body.requestId, proposal)
     }
 }
