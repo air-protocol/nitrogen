@@ -29,7 +29,6 @@ const processProposal = async (param, proposals, keys) => {
     proposal.counterOffers = []
     proposal.acceptances = []
     proposal.fulfillments = []
-    proposal.adjudications = []
     proposals.set(proposal.body.requestId, proposal)
 }
 
@@ -125,6 +124,9 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
 
 const processDisburse = async (param, proposals, keys) => {
     //previous hash is of acceptance
+    //TODO pass in adjudications or a flag for in dispute
+    const adjudications = []
+
     let disbursementBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
     let recipientKey
@@ -139,7 +141,7 @@ const processDisburse = async (param, proposals, keys) => {
     if (!proposal.settlementInitiated) {
         throw new Error('The escrow account is not established.  Initiate settlement.')
     }
-    if (proposal.adjudications.length > 0) {
+    if (adjudications.length > 0) {
         if (proposal.ruling && proposal.ruling.transaction) {
             //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
             submitDisburseTransaction(disbursementBody.secret, proposal.ruling.transaction)
