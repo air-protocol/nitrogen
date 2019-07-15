@@ -2,7 +2,6 @@ const adjudicateSchema = {
     "properties": {
         "makerId": { "type": "string" },
         "takerId": { "type": "string" },
-        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "agreement": { "type": "object" },
@@ -29,7 +28,6 @@ const negotiationSchema = {
     "properties": {
         "makerId": { "type": "string" },
         "takerId": { "type": "string" },
-        "recipientKey": { "type": "string" },
         "audience": { "type": "array" },
         "challengeStake": { "type": "number" },
         "conditions": { "type": "array" },
@@ -58,7 +56,6 @@ const fulfillmentSchema = {
     "properties": {
         "makerId": { "type": "string" },
         "takerId": { "type": "string" },
-        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "fulfillment": { "type": "object" },
@@ -70,7 +67,6 @@ const settlementInitiatedSchema = {
     "properties": {
         "makerId": { "type": "string" },
         "takerId": { "type": "string" },
-        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "escrow": { "type": "string" },
@@ -82,7 +78,6 @@ const signatureRequiredSchema = {
     "properties": {
         "makerId": { "type": "string" },
         "takerId": { "type": "string" },
-        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "transaction": { "type": "object" },

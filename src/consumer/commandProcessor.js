@@ -64,15 +64,15 @@ const processProposalResolved = async (param, proposals, keys) => {
 }
 
 const processNegotiationMessage = async (messageBody, proposal, keys, messageType) => {
-    messageBody.recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
-    if (!messageBody.recipientKey) {
+    recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
+    if (!recipientKey) {
         throw new Error('Unable to match up hashes')
     } else {
         try {
-            let message = buildMessage(messageBody, keys, negotiationSchema)
+            let message = buildMessage(messageBody, keys, negotiationSchema, recipientKey)
             message = await signMessage(message, keys)
             copyMessage = JSON.parse(JSON.stringify(message))
-            message = await encryptMessage(message)
+            message = await encryptMessage(message, recipientKey)
             sendMessage(messageType, message)
         } catch (e) {
             throw new Error('unable to sign and encrypt: ' + e)
@@ -96,27 +96,27 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         adjudicateBody.agreement = buildAgreement(proposal)
         adjudicateBody.previousHash = acceptance.hash
 
-        if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
-            adjudicateBody.recipientKey = acceptance.publicKey
+        let recipientKey
+        if (! keys.publicKey.equals(acceptance.publicKey)) {
+            recipientKey = acceptance.publicKey
         } else {
-            adjudicateBody.recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+            recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
         }
-        if (!adjudicateBody.recipientKey) {
+        if (!recipientKey) {
             throw new Error('Unable to match up hashes')
         }
 
-        let message = buildMessage(adjudicateBody, keys, adjudicateSchema)
+        let message = buildMessage(adjudicateBody, keys, adjudicateSchema, recipientKey)
         message = await signMessage(message, keys)
 
-        message = await encryptMessage(message)
+        message = await encryptMessage(message, recipientKey)
         sendMessage('adjudicate', message)
 
-        adjudicateBody.recipientKey = hostConfiguration.juryMeshPublicKey
-        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema)
+        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
         juryMessage = await signMessage(juryMessage, keys)
         copyMessage = JSON.parse(JSON.stringify(juryMessage))
 
-        juryMessage = await encryptMessage(juryMessage)
+        juryMessage = await encryptMessage(juryMessage, hostConfiguration.juryMeshPublicKey)
         sendMessage('adjudicate', juryMessage)
 
         proposalAdjudications.push(copyMessage)
@@ -159,12 +159,11 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
     signatureRequiredBody.message = 'signatureRequired'
     signatureRequiredBody.transaction = transaction
     signatureRequiredBody.previousHash = acceptance.hash
-    signatureRequiredBody.recipientKey = recipientKey
 
-    let message = buildMessage(signatureRequiredBody, keys, signatureRequiredSchema)
+    let message = buildMessage(signatureRequiredBody, keys, signatureRequiredSchema, recipientKey)
     message = await signMessage(message, keys)
     copyMessage = JSON.parse(JSON.stringify(message))
-    message = await encryptMessage(message)
+    message = await encryptMessage(message, recipientKey)
     sendMessage('signatureRequired', message)
     proposal.signatureRequired = copyMessage
 }
@@ -175,7 +174,7 @@ const processDisburse = async (param, proposals, adjudications, keys) => {
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
     proposalAdjudications = adjudications.get(disbursementBody.requestId)
     let recipientKey
-    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
+    if (! keys.publicKey.equals(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -213,19 +212,20 @@ const processFulfillment = async (param, proposals, keys) => {
     //previous hash is of acceptance
     let fulfillmentBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
-    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
-        fulfillmentBody.recipientKey = acceptance.publicKey
+    let recipientKey
+    if (!keys.publicKey.equals(acceptance.publicKey)) {
+        recipientKey = acceptance.publicKey
     } else {
-        fulfillmentBody.recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
     }
-    if (!fulfillmentBody.recipientKey) {
+    if (!recipientKey) {
         throw new Error('Unable to match up hashes')
     }
     try {
-        let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
+        let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema, recipientKey)
         message = await signMessage(message, keys)
         copyMessage = JSON.parse(JSON.stringify(message))
-        message = await encryptMessage(message)
+        message = await encryptMessage(message, recipientKey)
         sendMessage('fulfillment', message)
         proposal.fulfillments.push(copyMessage)
     } catch (e) {
@@ -260,12 +260,13 @@ const processSettleProposal = async (param, proposals, keys) => {
         }
         escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
-    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
-        settlementInitiatedBody.recipientKey = acceptance.publicKey
+    let recipientKey
+    if (!keys.publicKey.equals(acceptance.publicKey)) {
+        recipientKey = acceptance.publicKey
     } else {
-        settlementInitiatedBody.recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
     }
-    if (!settlementInitiatedBody.recipientKey) {
+    if (!recipientKey) {
         throw new Error('Unable to match up hashes')
     }
     try {
@@ -276,10 +277,10 @@ const processSettleProposal = async (param, proposals, keys) => {
         settlementInitiatedBody.escrow = escrowPair.publicKey()
         settlementInitiatedBody.previousHash = acceptance.hash
 
-        let message = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema)
+        let message = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema, recipientKey)
         message = await signMessage(message, keys)
         copyMessage = JSON.parse(JSON.stringify(message))
-        message = await encryptMessage(message)
+        message = await encryptMessage(message, recipientKey)
         sendMessage('settlementInitiated', message)
         proposal.settlementInitiated = copyMessage
     } catch (e) {

@@ -15,8 +15,8 @@ const signMessage = async (message, keys) => {
     return message
 }
 
-const encryptMessage = async (message) => {
-    message.body = await eccrypto.encrypt(message.recipientKey, Buffer.from(JSON.stringify(message.body)))
+const encryptMessage = async (message, recipientKey) => {
+    message.body = await eccrypto.encrypt(recipientKey, Buffer.from(JSON.stringify(message.body)))
     return message
 }
 

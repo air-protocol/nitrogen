@@ -23,8 +23,8 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-const buildMessage = (body, key, schema) => {
-    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, recipientKey: body.recipientKey }
+const buildMessage = (body, key, schema, recipientKey) => {
+    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, recipientKey: recipientKey }
     if (schema) {
         ajv.validate(schema, message.body)
     }
