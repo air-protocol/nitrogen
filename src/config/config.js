@@ -12,6 +12,7 @@ const hostConfig = {
     addMeTTL: argv.addMeTTL || 500,
     addMeTTLBound: argv.addMeTTLBound,
     juryKey: argv.juryKey || 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME',
+    juryMeshPublicKey: 'TODO',
     consumerId: argv.consumerId
 }
 module.exports = hostConfig

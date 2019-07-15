@@ -1,11 +1,12 @@
 const adjudicateSchema = {
     "properties": {
         "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": { "type": "string" },
-        "previousHash": { "type": "object" },
-        "negotiation": { "type": "object" }
+        "agreement": { "type": "object" },
+        "previousHash": { "type": "object" }
     }
 }
 
@@ -26,17 +27,18 @@ const proposalSchema = {
 
 const negotiationSchema = {
     "properties": {
+        "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "recipientKey": { "type": "string" },
         "audience": { "type": "array" },
         "challengeStake": { "type": "number" },
         "conditions": { "type": "array" },
         "juryPool": { "type": "string" },
-        "makerId": { "type": "string" },
         "offerAsset": { "type": "string" },
         "offerAmount": { "type": "number" },
         "requestAmount": { "type": "number" },
         "requestAsset": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": { "type": "string" },
         "message": { "type": "string" },
         "previousHash": { "type": "object" }
     }
@@ -45,9 +47,9 @@ const negotiationSchema = {
 const proposalResolvedSchema = {
     "properties": {
         "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": { "type": "string" },
         "previousHash": { "type": "object" }
     }
 }
@@ -55,9 +57,10 @@ const proposalResolvedSchema = {
 const fulfillmentSchema = {
     "properties": {
         "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": { "type": "string" },
         "fulfillment": { "type": "object" },
         "previousHash": { "type": "object" }
     }
@@ -66,9 +69,10 @@ const fulfillmentSchema = {
 const settlementInitiatedSchema = {
     "properties": {
         "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": { "type": "string" },
         "escrow": { "type": "string" },
         "previousHash": { "type": "object" }
     }
@@ -77,9 +81,10 @@ const settlementInitiatedSchema = {
 const signatureRequiredSchema = {
     "properties": {
         "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "recipientKey": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
-        "takerId": { "type": "string" },
         "transaction": { "type": "object" },
         "previousHash": { "type": "object" }
     }

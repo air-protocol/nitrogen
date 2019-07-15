@@ -1,5 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
+const { buildAgreement } = require('./agreement')
 const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
 const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
@@ -20,7 +21,7 @@ const getKeyFromPreviousHash = (previousHash, proposal) => {
     return recipientKey
 }
 
-const processProposal = async (param, proposals, keys) => {
+const processProposal = async (param, proposals, adjudications, keys) => {
     let proposalBody = JSON.parse(param)
     let proposal = buildMessage(proposalBody, keys, proposalSchema)
     proposal = await signMessage(proposal, keys)
@@ -29,8 +30,8 @@ const processProposal = async (param, proposals, keys) => {
     proposal.counterOffers = []
     proposal.acceptances = []
     proposal.fulfillments = []
-    proposal.adjudications = []
     proposals.set(proposal.body.requestId, proposal)
+    adjudications.set(proposal.body.requestId, [])
 }
 
 const processProposals = (proposals) => {
@@ -63,15 +64,15 @@ const processProposalResolved = async (param, proposals, keys) => {
 }
 
 const processNegotiationMessage = async (messageBody, proposal, keys, messageType) => {
-    let recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
-    if (!recipientKey) {
+    messageBody.recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
+    if (!messageBody.recipientKey) {
         throw new Error('Unable to match up hashes')
     } else {
         try {
             let message = buildMessage(messageBody, keys, negotiationSchema)
             message = await signMessage(message, keys)
             copyMessage = JSON.parse(JSON.stringify(message))
-            message = await encryptMessage(message, recipientKey)
+            message = await encryptMessage(message)
             sendMessage(messageType, message)
         } catch (e) {
             throw new Error('unable to sign and encrypt: ' + e)
@@ -80,35 +81,44 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
     return copyMessage
 }
 
-const processAdjudication = async (param, proposals, keys) => {
+const processAdjudication = async (param, proposals, adjudications, keys) => {
     let { proposal, acceptance } = getResolvedAcceptance(param, proposals)
     if (!proposal.settlementInitiated) {
         throw new Error('The settlement has not yet been initiated')
     }
-    let senderKey
-    if(proposal.body.makerId === hostConfiguration.consumerId) {
-        // Maker called adjudication
-        senderKey = proposal.body.makerId
-    } else {
-        // Taker called adjudication
-        senderKey = proposal.body.takerId
-    }
- 
     try {
         let adjudicateBody = {}
         adjudicateBody.makerId = proposal.body.makerId
         adjudicateBody.takerId = proposal.body.takerId
         adjudicateBody.requestId = proposal.body.requestId
         adjudicateBody.message = 'adjudicate'
-        adjudicateBody.escrow = escrowPair.publicKey()
+        adjudicateBody.agreement = buildAgreement(proposal)
         adjudicateBody.previousHash = acceptance.hash
+
+        if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
+            adjudicateBody.recipientKey = acceptance.publicKey
+        } else {
+            adjudicateBody.recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+        }
+        if (!adjudicateBody.recipientKey) {
+            throw new Error('Unable to match up hashes')
+        }
 
         let message = buildMessage(adjudicateBody, keys, adjudicateSchema)
         message = await signMessage(message, keys)
-        copyMessage = JSON.parse(JSON.stringify(message))
-        message = await encryptMessage(message, hostConfiguration.juryKey)
+
+        message = await encryptMessage(message)
         sendMessage('adjudicate', message)
-        proposal.adjudicate = copyMessage
+
+        adjudicateBody.recipientKey = hostConfiguration.juryMeshPublicKey
+        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema)
+        juryMessage = await signMessage(juryMessage, keys)
+        copyMessage = JSON.parse(JSON.stringify(juryMessage))
+
+        juryMessage = await encryptMessage(juryMessage)
+        sendMessage('adjudicate', juryMessage)
+
+        adjudications.push(copyMessage)
     } catch (e) {
         throw new Error('unable to sign and encrypt: ' + e)
     }
@@ -148,22 +158,21 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
     signatureRequiredBody.message = 'signatureRequired'
     signatureRequiredBody.transaction = transaction
     signatureRequiredBody.previousHash = acceptance.hash
+    signatureRequiredBody.recipientKey = recipientKey
 
     let message = buildMessage(signatureRequiredBody, keys, signatureRequiredSchema)
     message = await signMessage(message, keys)
     copyMessage = JSON.parse(JSON.stringify(message))
-    message = await encryptMessage(message, recipientKey)
+    message = await encryptMessage(message)
     sendMessage('signatureRequired', message)
     proposal.signatureRequired = copyMessage
 }
 
-const processDisburse = async (param, proposals, keys) => {
-    //previous hash is of acceptance
-    //TODO pass in adjudications or a flag for in dispute
-    const adjudications = []
+const processDisburse = async (param, proposals, adjudications, keys) => {
 
     let disbursementBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
+    proposalAdjudications = adjudications.get(disbursementBody.requestId)
     let recipientKey
     if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
@@ -176,7 +185,7 @@ const processDisburse = async (param, proposals, keys) => {
     if (!proposal.settlementInitiated) {
         throw new Error('The escrow account is not established.  Initiate settlement.')
     }
-    if (adjudications.length > 0) {
+    if (proposalAdjudications.length > 0) {
         if (proposal.ruling && proposal.ruling.transaction) {
             //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
             submitDisburseTransaction(disbursementBody.secret, proposal.ruling.transaction)
@@ -203,20 +212,19 @@ const processFulfillment = async (param, proposals, keys) => {
     //previous hash is of acceptance
     let fulfillmentBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
-    let recipientKey
     if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
-        recipientKey = acceptance.publicKey
+        fulfillmentBody.recipientKey = acceptance.publicKey
     } else {
-        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+        fulfillmentBody.recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
     }
-    if (!recipientKey) {
+    if (!fulfillmentBody.recipientKey) {
         throw new Error('Unable to match up hashes')
     }
     try {
         let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema)
         message = await signMessage(message, keys)
         copyMessage = JSON.parse(JSON.stringify(message))
-        message = await encryptMessage(message, recipientKey)
+        message = await encryptMessage(message)
         sendMessage('fulfillment', message)
         proposal.fulfillments.push(copyMessage)
     } catch (e) {
@@ -237,6 +245,7 @@ const processAcceptProposal = async (param, proposals, keys) => {
 
 const processSettleProposal = async (param, proposals, keys) => {
     let settlement = JSON.parse(param)
+    let settlementInitiatedBody = {}
     let { proposal, acceptance } = getResolvedAcceptance(settlement.requestId, proposals)
     let escrowPair
     if (proposal.body.offerAsset === 'native') {
@@ -250,17 +259,15 @@ const processSettleProposal = async (param, proposals, keys) => {
         }
         escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
-    let recipientKey
     if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
-        recipientKey = acceptance.publicKey
+        settlementInitiatedBody.recipientKey = acceptance.publicKey
     } else {
-        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+        settlementInitiatedBody.recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
     }
-    if (!recipientKey) {
+    if (!settlementInitiatedBody.recipientKey) {
         throw new Error('Unable to match up hashes')
     }
     try {
-        let settlementInitiatedBody = {}
         settlementInitiatedBody.makerId = proposal.body.makerId
         settlementInitiatedBody.takerId = acceptance.body.takerId
         settlementInitiatedBody.requestId = proposal.body.requestId
@@ -271,7 +278,7 @@ const processSettleProposal = async (param, proposals, keys) => {
         let message = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema)
         message = await signMessage(message, keys)
         copyMessage = JSON.parse(JSON.stringify(message))
-        message = await encryptMessage(message, recipientKey)
+        message = await encryptMessage(message)
         sendMessage('settlementInitiated', message)
         proposal.settlementInitiated = copyMessage
     } catch (e) {
@@ -361,7 +368,7 @@ const processOfferHistory = (param, proposals) => {
     })
     if (proposal.resolution) {
         console.log('---------------------------------')
-        console.log('Proposal resolved accepting taker id: ' + proposal.resolution.takerId)
+        console.log('Proposal resolved accepting taker id: ' + proposal.resolution.body.takerId)
         console.log('---------------------------------')
     }
     if (proposal.settlementInitiated) {
