@@ -86,6 +86,7 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
     if (!proposal.settlementInitiated) {
         throw new Error('The settlement has not yet been initiated')
     }
+    let proposalAdjudications = adjudications.get(proposal.body.requestId)
     try {
         let adjudicateBody = {}
         adjudicateBody.makerId = proposal.body.makerId
@@ -118,7 +119,7 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         juryMessage = await encryptMessage(juryMessage)
         sendMessage('adjudicate', juryMessage)
 
-        adjudications.push(copyMessage)
+        proposalAdjudications.push(copyMessage)
     } catch (e) {
         throw new Error('unable to sign and encrypt: ' + e)
     }
