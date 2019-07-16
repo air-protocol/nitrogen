@@ -115,7 +115,7 @@ settle { "requestId" : "cde1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXE
 ### Fulfillment  (optionally sent from maker as buyer and or taker as seller)
 Previous hash is to resolved acceptance
 ~~~
-fulfillment { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfilment" : "account transfer", "previousHash" : {"type":"Buffer","data":"base64:wpgg4WSY0ggGQWl2UUUUI+DY4LfYrFCij3BLlludrSI="}}
+fulfillment { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : {"type":"Buffer","data":"base64:wpgg4WSY0ggGQWl2UUUUI+DY4LfYrFCij3BLlludrSI="}}
 ~~~
 
 ### Disburse (from maker buyer)
