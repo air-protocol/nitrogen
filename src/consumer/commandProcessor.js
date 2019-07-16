@@ -97,7 +97,7 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         adjudicateBody.previousHash = acceptance.hash
 
         let recipientKey
-        if (! keys.publicKey.equals(acceptance.publicKey)) {
+        if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
             recipientKey = acceptance.publicKey
         } else {
             recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -174,7 +174,7 @@ const processDisburse = async (param, proposals, adjudications, keys) => {
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
     proposalAdjudications = adjudications.get(disbursementBody.requestId)
     let recipientKey
-    if (! keys.publicKey.equals(acceptance.publicKey)) {
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -213,7 +213,7 @@ const processFulfillment = async (param, proposals, keys) => {
     let fulfillmentBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -261,7 +261,7 @@ const processSettleProposal = async (param, proposals, keys) => {
         escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    if (JSON.stringify(keys.publicKey) !== JSON.stringify(acceptance.publicKey)) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)

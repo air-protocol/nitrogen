@@ -1,23 +1,24 @@
 const buildMessageChain = (proposal, message) => {
     for (i = 0; i < proposal.counterOffers.length; i++) {
-        if (proposal.counterOffers[i].hash === message.previousHash) {
+        if (JSON.stringify(proposal.counterOffers[i].hash) === JSON.stringify(message.body.previousHash)) {
             proposal.counterOffers[i].next = message
             return buildMessageChain(proposal, proposal.counterOffers[i])
-        }
+        } 
     }
-    if (proposal.hash === message.previousHash) {
+    if (JSON.stringify(proposal.hash) === JSON.stringify(message.body.previousHash)) {
         return {
-            body: {
-                message: 'proposal',
-                makerId: proposal.makerId,
-                takerId: proposal.takerId,
-                offerAsset: proposal.offerAsset,
-                offerAmount: proposal.offerAmount,
-                requestAsset: proposal.requestAsset,
-                requestAmount: proposal.requestAmount
+            "body": {
+                "message": "proposal",
+                "makerId": proposal.body.makerId,
+                "takerId": proposal.body.takerId,
+                "offerAsset": proposal.body.offerAsset,
+                "offerAmount": proposal.body.offerAmount,
+                "requestAsset": proposal.body.requestAsset,
+                "requestAmount": proposal.body.requestAmount
             },
-            hash: proposal.hash,
-            next: message
+            "hash": proposal.hash,
+            "publicKey": proposal.publicKey,
+            "next": message
         }
     }
 }
