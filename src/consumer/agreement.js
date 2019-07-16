@@ -1,11 +1,11 @@
 const buildMessageChain = (proposal, message) => {
     for (i = 0; i < proposal.counterOffers.length; i++) {
-        if (JSON.stringify(proposal.counterOffers[i].hash) === JSON.stringify(message.body.previousHash)) {
+        if (proposal.counterOffers[i].hash.equals(message.body.previousHash)) {
             proposal.counterOffers[i].next = message
             return buildMessageChain(proposal, proposal.counterOffers[i])
         } 
     }
-    if (JSON.stringify(proposal.hash) === JSON.stringify(message.body.previousHash)) {
+    if (proposal.hash.equals(message.body.previousHash)) {
         return {
             "body": {
                 "message": "proposal",
