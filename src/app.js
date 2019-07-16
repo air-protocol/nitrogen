@@ -6,6 +6,7 @@ const hostConfiguration = require('./config/config')
 const connectToPeers = require('./peer')
 const logger = require('./logging')
 const { addMeHandler,
+    adjudicationHandler,
     counterOfferHandler,
     pingHandler,
     proposalHandler,
@@ -47,6 +48,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         socket.on('fulfillment', fulfillmentHandler)
         socket.on('settlementInitiated', settlementInitiatedHandler)
         socket.on('signatureRequired', signatureRequiredHandler)
+        socket.on('adjudicate', adjudicationHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()

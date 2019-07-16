@@ -17,10 +17,10 @@ const messageSeen = (messageUUID) => {
     return true
 }
 
-const consumerProposalHandler = async (proposal, proposals, keys) => {
+const consumerProposalHandler = async (proposal, proposals, adjudications, keys) => {
     //If you have not processed the message
     //and it is from another party (your key !== message key)
-    if ((!messageSeen(proposal)) && (JSON.stringify(keys.publicKey) !== JSON.stringify(proposal.publicKey))) {
+    if ((!messageSeen(proposal)) && (!keys.publicKey.equals(proposal.publicKey))) {
         if (await !verifyMessage(proposal)) {
             logger.warn("Couldn't verify message signature on inbound proposal")
             return
@@ -30,6 +30,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
         proposal.acceptances = []
         proposal.fulfillments = []
         proposals.set(proposal.body.requestId, proposal)
+        adjudications.set(proposal.body.requestId, [])
     }
 }
 
@@ -39,7 +40,7 @@ const consumerProposalResolvedHandler = async (resolution, proposals) => {
             logger.warn("Couldn't verify message signature on inbound proposal resolution")
             return
         }
-        if ((resolution.makerId != consumerId) && (resolution.takerId != consumerId)) {
+        if ((resolution.body.makerId != consumerId) && (resolution.body.takerId != consumerId)) {
             proposals.delete(resolution.body.requestId)
         } else {
             let proposal = proposals.get(resolution.body.requestId)
@@ -63,14 +64,8 @@ const consumerAddMeHandler = (peerMessage) => {
 }
 
 const negotiationMessageProcessor = async (peerMessage, keys) => {
-    /* If you have not processed the message
-    and it is from the other party (your key !== message key)
-    and you are either the maker or taker
-    */
     let processedPeerMessage = undefined
-    if (!messageSeen(peerMessage.uuid) &&
-        ((JSON.stringify(keys.publicKey) !== JSON.stringify(peerMessage.publicKey)) &&
-            (peerMessage.makerId === consumerId || peerMessage.takerId === consumerId))) {
+    if (!messageSeen(peerMessage.uuid) && (keys.publicKey.equals(peerMessage.recipientKey))) {
         processedPeerMessage = await decryptMessage(peerMessage, keys.privateKey)
         if (await !verifyMessage(peerMessage)) {
             throw new Error("Couldn't verify message signature")
@@ -150,7 +145,7 @@ const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
 const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) => {
     try {
         let settlementInitiatedMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! settlementInitiatedMessage) {
+        if (!settlementInitiatedMessage) {
             return
         }
         let proposal = proposals.get(settlementInitiatedMessage.body.requestId)
@@ -167,10 +162,23 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
     }
 }
 
+const consumerAdjudicationHandler = async (peerMessage, adjudications, keys) => {
+    try {
+        let adjudicationMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (!adjudicationMessage) {
+            return
+        }
+        let proposalAdjudications = adjudications.get(adjudicationMessage.body.requestId)
+        proposalAdjudications.push(adjudicationMessage)
+    } catch (e) {
+        logger.warn("unable to process inbound adjudication: " + e)
+    }
+}
+
 const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) => {
     try {
         let signatureRequiredMessage = await negotiationMessageProcessor(peerMessage, keys)
-        if (! signatureRequiredMessage) {
+        if (!signatureRequiredMessage) {
             return
         }
         let proposal = proposals.get(signatureRequiredMessage.body.requestId)
@@ -187,4 +195,4 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler }
+module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler }

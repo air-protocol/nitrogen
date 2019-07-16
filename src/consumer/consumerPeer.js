@@ -3,7 +3,8 @@ const localCache = require('../cache')
 const hostConfiguration = require('../config/config')
 const getDirectoryFromBootNodes = require('../boot')
 const logger = require('../logging')
-const { consumerAddMeHandler,
+const { consumerAdjudicationHandler,
+    consumerAddMeHandler,
     consumerCounterOfferHandler,
     consumerProposalHandler,
     consumerAcceptHandler,
@@ -22,8 +23,8 @@ if (hostConfiguration.refreshDirectory) {
     localCache.save()
 }
 
-const buildMessage = (body, key, schema) => {
-    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, makerId: body.makerId, takerId: body.takerId }
+const buildMessage = (body, key, schema, recipientKey) => {
+    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, recipientKey: recipientKey }
     if (schema) {
         ajv.validate(schema, message.body)
     }
@@ -36,7 +37,7 @@ const sendMessage = (messageType, message) => {
     })
 }
 
-const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
+const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudications) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
@@ -45,7 +46,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
                 consumerCounterOfferHandler(counterOffer, proposals, keys)
             })
             peerSocket.on('proposal', (proposal) => {
-                consumerProposalHandler(proposal, proposals, keys)
+                consumerProposalHandler(proposal, proposals, adjudications, keys)
             })
             peerSocket.on('accept', (acceptMessage) => {
                 consumerAcceptHandler(acceptMessage, proposals, keys)
@@ -62,6 +63,9 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
             peerSocket.on('signatureRequired', (signatureRequiredMessage) => {
                 consumerSignatureRequiredHandler(signatureRequiredMessage, proposals, keys)
             })
+            peerSocket.on('adjudicate', (adjucationMessage) => {
+                consumerAdjudicationHandler(adjucationMessage, adjudications, keys)
+            })
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -74,7 +78,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals) => {
     return promise
 }
 
-const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals) => {
+const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adjudications) => {
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -93,7 +97,7 @@ const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals) => {
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals)
+            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals, adjudications)
             peers.push(peer)
         } catch (e) {
             logger.warn('error connecting to peer: ' + e)

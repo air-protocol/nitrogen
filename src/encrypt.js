@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const eccrypto = require('eccrypto')
+const BJSON = require('buffer-json')
 
 const createKeys = () => {
     let privateKey = eccrypto.generatePrivate()
@@ -15,14 +16,14 @@ const signMessage = async (message, keys) => {
     return message
 }
 
-const encryptMessage = async (message, recipientPublicKey) => {
-    message.body = await eccrypto.encrypt(recipientPublicKey, Buffer.from(JSON.stringify(message.body)))
+const encryptMessage = async (message, recipientKey) => {
+    message.body = await eccrypto.encrypt(recipientKey, Buffer.from(BJSON.stringify(message.body)))
     return message
 }
 
 const decryptMessage = async (message, privateKey) => {
     let decryptedBody = await eccrypto.decrypt(privateKey, message.body)
-    message.body = JSON.parse(decryptedBody)
+    message.body = BJSON.parse(decryptedBody)
     return message
 }
 

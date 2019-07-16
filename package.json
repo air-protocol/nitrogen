@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "buffer-json": "^2.0.0",
     "eccrypto": "^1.1.1",
     "express": "^4.16.4",
     "flat-cache": "^2.0.1",

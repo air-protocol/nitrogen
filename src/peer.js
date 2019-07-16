@@ -1,6 +1,7 @@
 const uuid = require('uuid')
 const localCache = require('./cache')
 const { addMeHandler,
+    adjudicationHandler,
     counterOfferHandler,
     pingHandler,
     proposalHandler,
@@ -38,6 +39,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.on('fulfillment', fulfillmentHandler)
             peerSocket.on('settlementInitiated', settlementInitiatedHandler)
             peerSocket.on('signatureRequired', signatureRequiredHandler)
+            peerSocket.on('adjudicate', adjudicationHandler)
 
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)
