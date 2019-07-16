@@ -65,7 +65,7 @@ const processProposalResolved = async (param, proposals, keys) => {
 }
 
 const processNegotiationMessage = async (messageBody, proposal, keys, messageType) => {
-    recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
+    let recipientKey = getKeyFromPreviousHash(messageBody.previousHash, proposal)
     if (!recipientKey) {
         throw new Error('Unable to match up hashes')
     }
