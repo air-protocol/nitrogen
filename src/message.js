@@ -93,7 +93,7 @@ const signatureRequiredHandler = (peerMessage) => {
 const adjudicationHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard adjudication uuid: ' + peerMessage.uuid)
-        serverSocket.emit('adjudication', peerMessage)
+        serverSocket.emit('adjudicate', peerMessage)
         return true
     }
     return false

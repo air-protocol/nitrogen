@@ -39,7 +39,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.on('fulfillment', fulfillmentHandler)
             peerSocket.on('settlementInitiated', settlementInitiatedHandler)
             peerSocket.on('signatureRequired', signatureRequiredHandler)
-            peerSocket.on('adjudication', adjudicationHandler)
+            peerSocket.on('adjudicate', adjudicationHandler)
 
             peerSocket.peerAddress = peerAddress
             resolve(peerSocket)

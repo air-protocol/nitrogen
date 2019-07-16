@@ -62,7 +62,7 @@ settle { "requestId" : "abc1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDB
 
 ### ViewEscrow
 ~~~
-viewEscrow GABKVQSC3AMSBWLS2QLDXIDMYW2WSHIQIHZIVCLQLFAUU2XQ3G7RVGQB
+viewEscrow abc1234
 ~~~
 
 ### Fulfillment 

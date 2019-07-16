@@ -48,7 +48,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         socket.on('fulfillment', fulfillmentHandler)
         socket.on('settlementInitiated', settlementInitiatedHandler)
         socket.on('signatureRequired', signatureRequiredHandler)
-        socket.on('adjudication', adjudicationHandler)
+        socket.on('adjudicate', adjudicationHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()
