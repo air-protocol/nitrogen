@@ -1,13 +1,16 @@
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
 const logger = require('./clientLogging')
+const hostConfiguration = require('../config/config')
 
 //TODO remove for production
 stellar.Network.useTestNetwork()
 
+const platformFees = 10
+
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
     //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
-    const baseAmount = 2
+    const baseAmount = 2 
 
     let buyerAccount
     try {
@@ -22,7 +25,7 @@ const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => 
         fee: await server.fetchBaseFee()
     }
 
-    const total = challengeStake + nativeAmount + baseAmount
+    const total = challengeStake + nativeAmount + baseAmount + platformFees
 
     const escrowAccountConfig = {
         destination: escrowPair.publicKey(),
@@ -112,6 +115,7 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
 const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake, nativeAmount, escrowKey) => {
     const server = new stellar.Server('https://horizon-testnet.stellar.org')
     const escrowAccount = await server.loadAccount(escrowKey)
+    const platformKey = hostConfiguration.platformKey
 
     const buyerPair = stellar.Keypair.fromSecret(secret)
 
@@ -119,6 +123,12 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
         destination: sellerKey,
         asset: stellar.Asset.native(),
         amount: nativeAmount.toString()
+    }
+
+    const paymentToPlatform = {
+        destination: platformKey,
+        asset: stellar.Asset.native(),
+        amount: platformFees.toString()
     }
 
     const mergeToBuyer = {
@@ -133,6 +143,7 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
 
     let transaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
         .addOperation(stellar.Operation.payment(paymentToSeller))
+        .addOperation(stellar.Operation.payment(paymentToPlatform))
         .addOperation(stellar.Operation.accountMerge(mergeToBuyer))
         .setTimeout(stellar.TimeoutInfinite)
         .build()
