@@ -2,9 +2,8 @@ const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement } = require('./agreement')
 const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
-const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
+const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
-const logger = require('./clientLogging')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
@@ -32,23 +31,6 @@ const processProposal = async (param, proposals, adjudications, keys) => {
     proposal.fulfillments = []
     proposals.set(proposal.body.requestId, proposal)
     adjudications.set(proposal.body.requestId, [])
-}
-
-const processProposals = (proposals) => {
-    console.clear()
-    if (proposals.size) {
-        proposals.forEach((proposal, requestId) => {
-            console.log('---------------------------------')
-            console.log('request: ' + requestId)
-            console.log('offer asset: ' + proposal.body.offerAsset)
-            console.log('offer amount: ' + proposal.body.offerAmount)
-            console.log('request asset: ' + proposal.body.requestAsset)
-            console.log('request amount: ' + proposal.body.requestAmount)
-            console.log('---------------------------------')
-        })
-    } else {
-        logger.warn('no proposals')
-    }
 }
 
 const processProposalResolved = async (param, proposals, keys) => {
@@ -309,32 +291,5 @@ const processCounterOffer = async (param, proposals, keys) => {
     let counterOfferMessage = await processNegotiationMessage(counterOfferBody, proposal, keys, 'counterOffer')
     proposal.counterOffers.push(counterOfferMessage)
 }
-const processTransactionHistory = async (accountId) => {
-    const records = await transactionHistory(accountId)
-    records.forEach((item) => {
-        console.log('\n' + 'Source Account: ' + item.source_account)
-        console.log('Source Account Sequence: ' + item.source_account_sequence)
-        console.log('Created At: ' + item.created_at)
-        console.log('Memo: ' + item.memo)
-        console.log('Successful: ' + item.successful)
-        console.log('Fee Paid: ' + item.fee_paid)
-        console.log('Ledger number: ' + item.ledger)
-    })
-}
 
-const processViewEscrow = async (param, proposals) => {
-    const proposal = proposals.get(param)
-    if (!proposal.settlementInitiated) {
-        throw new Error('The settlement has not been initiated yet. No escrow account to view')
-    }
-    const escrowId = proposal.settlementInitiated.body.escrow
-    const accountResult = await viewEscrow(escrowId)
-    console.log('\nAccount Id: ' + accountResult.account_id)
-    console.log('Sequence: ' + accountResult.sequence)
-    console.log('Balance: ' + JSON.stringify(accountResult.balances[0]))
-    for (i = 0; i < accountResult.signers.length; i++) {
-        console.log('Signer: ' + JSON.stringify(accountResult.signers[i]))
-    }
-}
-
-module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow, processDisburse }
+module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processFulfillment, processDisburse }
