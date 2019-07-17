@@ -15,6 +15,7 @@ const hostConfig = {
     juryMeshPublicKey: '044a68235838f9a58de9caf1ef2c678bf2c9338da35affa33a978116c8a4de94f73850b15623fd44b8811b14faef1850b43ad819e8a4e80d75c3e4c276e3ce00b6',
     consumerId: argv.consumerId,
     meshPublicKey: argv.meshPublicKey,
-    meshPrivateKey: argv.meshPrivateKey
+    meshPrivateKey: argv.meshPrivateKey,
+    platformKey: 'GCFEOK477RXJZYDV642BRMBV43FO4NTMKROEXZHW45FQ7DW6XWTAUFVM'
 }
 module.exports = hostConfig
