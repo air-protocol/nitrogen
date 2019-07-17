@@ -20,15 +20,15 @@ const messageSeen = (messageUUID) => {
 const consumerProposalHandler = async (proposal, proposals, adjudications, keys) => {
     //If you have not processed the message
     //and it is from another party (your key !== message key)
-    if ((!messageSeen(proposal)) && (keys.publicKey.toString('hex') !== proposal.publicKey)) {
+    if ((!messageSeen(proposal.uuid)) && (keys.publicKey.toString('hex') !== proposal.publicKey)) {
         if (! await verifyMessage(proposal)) {
             logger.warn("Couldn't verify message signature on inbound proposal")
             return
         }
-        // if (proposals.get(proposal.body.requestId)) {
-        //     logger.warn('A proposal with that requestId already exists.')
-        //     return
-        // }
+        if (proposals.get(proposal.body.requestId)) {
+             logger.warn('A proposal with that requestId already exists.')
+             return
+        }
         proposal.counterOffers = []
         proposal.rejections = []
         proposal.acceptances = []
