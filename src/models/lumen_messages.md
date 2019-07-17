@@ -8,12 +8,12 @@ proposal { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS5
 
 ### AcceptOffer
 ~~~
-accept { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 100, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : {"type":"Buffer","data":"base64:IoIx2LaFunJOEy/LlMX6vzRRwtFbEiStEBZLu4I0+lU="}}
+accept { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 100, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : "228231d8b685ba724e132fcb94c5fabf3451c2d15b1224ad10164bbb8234fa55"}
 ~~~
 
 ### ProposalResolved
 ~~~
-resolve { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : {"type":"Buffer","data":"base64:IoIx2LaFunJOEy/LlMX6vzRRwtFbEiStEBZLu4I0+lU="}}
+resolve { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : "228231d8b685ba724e132fcb94c5fabf3451c2d15b1224ad10164bbb8234fa55"}
 ~~~
 
 ### Settlement
@@ -23,7 +23,7 @@ settle { "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXE
 
 ### Fulfillment 
 ~~~
-fulfillment { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : {"type":"Buffer","data":"base64:4XMZI2XXni5JX9jSe0M05xG+M5HGw4eO2027Gsz8MWU="}}
+fulfillment { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : "93b5e4e59d588cb4c2af502a937f5f18986031c7947ea0f4df3d18b4e2584426"}
 ~~~
 
 ### Buyer Disburse
@@ -47,12 +47,12 @@ proposal { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS5
 
 ### AcceptOffer
 ~~~
-accept { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "peanuts", "offerAmount" : 100, "requestAsset" : "native", "requestAmount" : 200, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : {"type":"Buffer","data":"base64:s8dD5y1qtHKpmjJCVLn4n1abuoJj0HMVL1VgftAS8Eo="}}
+accept { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "peanuts", "offerAmount" : 100, "requestAsset" : "native", "requestAmount" : 200, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : "b3c743e72d6ab472a99a324254b9f89f569bba8263d073152f55607ed012f04a"}
 ~~~
 
 ### ProposalResolved
 ~~~
-resolve { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : {"type":"Buffer","data":"base64:s8dD5y1qtHKpmjJCVLn4n1abuoJj0HMVL1VgftAS8Eo="}}
+resolve { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : "b3c743e72d6ab472a99a324254b9f89f569bba8263d073152f55607ed012f04a"}
 ~~~
 
 ### Settlement
@@ -67,7 +67,7 @@ viewEscrow abc1234
 
 ### Fulfillment 
 ~~~
-fulfillment { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : {"type":"Buffer","data":"base64:byDoV0dzGcp44okeWnvkiF4dz0u7kPoiaeiKClFNy70="}}
+fulfillment { "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : "12708c2b91133312b5d6c5e04a19fbf5443986dfc07c5c9ed8bb8f8d9554b72c"}
 ~~~
 
 ### Buyer Disburse
@@ -91,19 +91,19 @@ proposal { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS5
 ### Counter Offer (sent from taker as seller)
 Previous hash is to proposal
 ~~~
-counterOffer { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 80, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 5, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "countered", "previousHash" : {"type":"Buffer","data":"base64:qXl/ueIQVYXWGKZqrTDaKTsZfo/Du9WrfFPpcwfjSg0="}}
+counterOffer { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 80, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 5, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "countered", "previousHash" : "a9797fb9e2105585d618a66aad30da293b197e8fc3bbd5ab7c53e97307e34a0d"}
 ~~~
 
 ### AcceptOffer (sent from maker as buyer)
 Previous hash is to counter offer
 ~~~
-accept { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 80, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 5, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : {"type":"Buffer","data":"base64:Bl3QefyzmkER71XIF91iwwhHKfjlqqYV2n3AAng1wMg="}}
+accept { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 80, "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 5, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : "2c9afe76bfb3c86765742a984afaf28b4232ec2292c6ac179323c09d2dc9bdc7"}
 ~~~
 
 ### ProposalResolved (sent from maker as buyer)
 Previous hash is to proposal (Remember that you can resolve without taking an acceptance)
 ~~~
-resolve { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : {"type":"Buffer","data":"base64:Bl3QefyzmkER71XIF91iwwhHKfjlqqYV2n3AAng1wMg="}}
+resolve { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "previousHash" : "a9797fb9e2105585d618a66aad30da293b197e8fc3bbd5ab7c53e97307e34a0d"}
 ~~~
 
 ### Settlement (sent from maker as buyer)
@@ -115,7 +115,7 @@ settle { "requestId" : "cde1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXE
 ### Fulfillment  (optionally sent from maker as buyer and or taker as seller)
 Previous hash is to resolved acceptance
 ~~~
-fulfillment { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : {"type":"Buffer","data":"base64:wpgg4WSY0ggGQWl2UUUUI+DY4LfYrFCij3BLlludrSI="}}
+fulfillment { "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "fulfillment" : "account transfer", "previousHash" : "d3e192b7db6578c39e89dfb380fe003c06ac89d9beeed41e21b09314c82c1d79"}
 ~~~
 
 ### Disburse (from maker buyer)

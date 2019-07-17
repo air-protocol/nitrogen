@@ -10,12 +10,13 @@ const createKeys = () => {
 const signMessage = async (message, keys) => {
     let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
     message.hash = hashed.toString('hex')
-    message.signature = await eccrypto.sign(keys.privateKey, hashed).toString('hex')
+    let signatureHash = await eccrypto.sign(keys.privateKey, hashed)
+    message.signature = signatureHash.toString('hex')
     return message
 }
 
 const encryptMessage = async (message, recipientKey) => {
-    message.body = await eccrypto.encrypt(recipientKey, Buffer.from(JSON.stringify(message.body)))
+    message.body = await eccrypto.encrypt(Buffer.from(recipientKey, 'hex'), Buffer.from(JSON.stringify(message.body)))
     return message
 }
 
@@ -28,7 +29,7 @@ const decryptMessage = async (message, privateKey) => {
 const verifyMessage = async (message) => {
     let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
     try {
-        await eccrypto.verify(Buffer.from(message.publicKey, 'hex'), hashed, message.signature)
+        await eccrypto.verify(Buffer.from(message.publicKey, 'hex'), hashed, Buffer.from(message.signature, 'hex'))
         return true
     } catch (e) {
         return false
