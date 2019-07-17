@@ -22,6 +22,9 @@ const getKeyFromPreviousHash = (previousHash, proposal) => {
 
 const processProposal = async (param, proposals, adjudications, keys) => {
     let proposalBody = JSON.parse(param)
+    if (proposals.get(proposalBody.requestId)) {
+        throw new Error('A proposal with that requestId already exists.')
+    }
     let proposal = buildMessage(proposalBody, keys, proposalSchema)
     proposal = await signMessage(proposal, keys)
     sendMessage('proposal', proposal)
@@ -292,4 +295,4 @@ const processCounterOffer = async (param, proposals, keys) => {
     proposal.counterOffers.push(counterOfferMessage)
 }
 
-module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processFulfillment, processDisburse }
+module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse }
