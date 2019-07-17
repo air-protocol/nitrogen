@@ -25,6 +25,10 @@ const consumerProposalHandler = async (proposal, proposals, adjudications, keys)
             logger.warn("Couldn't verify message signature on inbound proposal")
             return
         }
+        // if (proposals.get(proposal.body.requestId)) {
+        //     logger.warn('A proposal with that requestId already exists.')
+        //     return
+        // }
         proposal.counterOffers = []
         proposal.rejections = []
         proposal.acceptances = []
