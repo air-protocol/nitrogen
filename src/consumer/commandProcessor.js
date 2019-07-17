@@ -1,19 +1,17 @@
-const BJSON = require('buffer-json')
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement } = require('./agreement')
 const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
-const { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
+const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
-const logger = require('./clientLogging')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
-    if (previousHash.equals(proposal.hash)) {
+    if (previousHash === proposal.hash) {
         recipientKey = proposal.publicKey
     } else {
         for (i = 0; i < proposal.counterOffers.length; i++) {
-            if (previousHash.equals(proposal.counterOffers[i].hash)) {
+            if (previousHash === proposal.counterOffers[i].hash) {
                 recipientKey = proposal.counterOffers[i].publicKey
                 break
             }
@@ -23,7 +21,7 @@ const getKeyFromPreviousHash = (previousHash, proposal) => {
 }
 
 const processProposal = async (param, proposals, adjudications, keys) => {
-    let proposalBody = BJSON.parse(param)
+    let proposalBody = JSON.parse(param)
     let proposal = buildMessage(proposalBody, keys, proposalSchema)
     proposal = await signMessage(proposal, keys)
     sendMessage('proposal', proposal)
@@ -35,25 +33,8 @@ const processProposal = async (param, proposals, adjudications, keys) => {
     adjudications.set(proposal.body.requestId, [])
 }
 
-const processProposals = (proposals) => {
-    console.clear()
-    if (proposals.size) {
-        proposals.forEach((proposal, requestId) => {
-            console.log('---------------------------------')
-            console.log('request: ' + requestId)
-            console.log('offer asset: ' + proposal.body.offerAsset)
-            console.log('offer amount: ' + proposal.body.offerAmount)
-            console.log('request asset: ' + proposal.body.requestAsset)
-            console.log('request amount: ' + proposal.body.requestAmount)
-            console.log('---------------------------------')
-        })
-    } else {
-        logger.warn('no proposals')
-    }
-}
-
 const processProposalResolved = async (param, proposals, keys) => {
-    let resolveBody = BJSON.parse(param)
+    let resolveBody = JSON.parse(param)
     let proposal = proposals.get(resolveBody.requestId)
     if (!proposal) {
         throw new Error("Unable to find proposal")
@@ -98,7 +79,8 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         adjudicateBody.previousHash = acceptance.hash
 
         let recipientKey
-        if (!keys.publicKey.equals(acceptance.publicKey)) {
+        let myKey = keys.publicKey.toString('hex')
+        if (myKey !== acceptance.publicKey) {
             recipientKey = acceptance.publicKey
         } else {
             recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -113,8 +95,8 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         message = await encryptMessage(message, recipientKey)
         sendMessage('adjudicate', message)
 
-        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, Buffer.from(hostConfiguration.juryMeshPublicKey, 'hex'))
-        let copyMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, Buffer.from(hostConfiguration.juryMeshPublicKey, 'hex'))
+        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
+        let copyMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
         copyMessage = await signMessage(copyMessage, keys)
         juryMessage = await signMessage(juryMessage, keys)
 
@@ -174,11 +156,12 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
 
 const processDisburse = async (param, proposals, adjudications, keys) => {
 
-    let disbursementBody = BJSON.parse(param)
+    let disbursementBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
     proposalAdjudications = adjudications.get(disbursementBody.requestId)
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -214,10 +197,11 @@ const processDisburse = async (param, proposals, adjudications, keys) => {
 
 const processFulfillment = async (param, proposals, keys) => {
     //previous hash is of acceptance
-    let fulfillmentBody = BJSON.parse(param)
+    let fulfillmentBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -240,7 +224,7 @@ const processFulfillment = async (param, proposals, keys) => {
 }
 
 const processAcceptProposal = async (param, proposals, keys) => {
-    let acceptBody = BJSON.parse(param)
+    let acceptBody = JSON.parse(param)
     let proposal = proposals.get(acceptBody.requestId)
     if (proposal) {
         let acceptanceMessage = await processNegotiationMessage(acceptBody, proposal, keys, 'accept')
@@ -251,7 +235,7 @@ const processAcceptProposal = async (param, proposals, keys) => {
 }
 
 const processSettleProposal = async (param, proposals, keys) => {
-    let settlement = BJSON.parse(param)
+    let settlement = JSON.parse(param)
     let settlementInitiatedBody = {}
     let { proposal, acceptance } = getResolvedAcceptance(settlement.requestId, proposals)
     let escrowPair
@@ -267,7 +251,8 @@ const processSettleProposal = async (param, proposals, keys) => {
         escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -298,7 +283,7 @@ const processSettleProposal = async (param, proposals, keys) => {
 }
 
 const processCounterOffer = async (param, proposals, keys) => {
-    let counterOfferBody = BJSON.parse(param)
+    let counterOfferBody = JSON.parse(param)
     let proposal = proposals.get(counterOfferBody.requestId)
     if (!proposal) {
         throw new Error('Unable to match counter offer to a proposal')
@@ -307,118 +292,4 @@ const processCounterOffer = async (param, proposals, keys) => {
     proposal.counterOffers.push(counterOfferMessage)
 }
 
-const processCounterOffers = (param, proposals) => {
-    let counteredProposal = proposals.get(param)
-    if (!counteredProposal) {
-        throw new Error('proposal not found')
-    }
-    counteredProposal.counterOffers.forEach((counterOffer) => {
-        console.log('---------------------------------')
-        console.log('request: ' + counterOffer.body.requestId)
-        console.log('taker id: ' + counterOffer.body.takerId)
-        console.log('offer asset: ' + counterOffer.body.offerAsset)
-        console.log('offer amount: ' + counterOffer.body.offerAmount)
-        console.log('request asset: ' + counterOffer.body.requestAsset)
-        console.log('request amount: ' + counterOffer.body.requestAmount)
-        console.log('---------------------------------')
-    })
-}
-
-const processOfferHistory = (param, proposals) => {
-    let proposal = proposals.get(param)
-    if (!proposal) {
-        throw new Error('proposal not found')
-    }
-    console.log('---------------------------------')
-    console.log('Original Proposal')
-    console.log('from public key: ' + proposal.publicKey.toString('hex'))
-    console.log('request: ' + proposal.body.requestId)
-    console.log('maker id: ' + proposal.body.makerId)
-    console.log('offer asset: ' + proposal.body.offerAsset)
-    console.log('offer amount: ' + proposal.body.offerAmount)
-    console.log('request asset: ' + proposal.body.requestAsset)
-    console.log('request amount: ' + proposal.body.requestAmount)
-    console.log('---------------------------------')
-    proposal.counterOffers.forEach((counterOffer) => {
-        console.log('---------------------------------')
-        console.log('Counter Offer')
-        console.log('from public key: ' + counterOffer.publicKey.toString('hex'))
-        console.log('request: ' + counterOffer.body.requestId)
-        console.log('maker id: ' + counterOffer.body.makerId)
-        console.log('taker id: ' + counterOffer.body.takerId)
-        console.log('offer asset: ' + counterOffer.body.offerAsset)
-        console.log('offer amount: ' + counterOffer.body.offerAmount)
-        console.log('request asset: ' + counterOffer.body.requestAsset)
-        console.log('request amount: ' + counterOffer.body.requestAmount)
-        console.log('---------------------------------')
-    })
-    proposal.acceptances.forEach((acceptance) => {
-        console.log('---------------------------------')
-        console.log('Acceptance')
-        console.log('from public key: ' + acceptance.publicKey.toString('hex'))
-        console.log('request: ' + acceptance.body.requestId)
-        console.log('maker id: ' + acceptance.body.makerId)
-        console.log('taker id: ' + acceptance.body.takerId)
-        console.log('offer asset: ' + acceptance.body.offerAsset)
-        console.log('offer amount: ' + acceptance.body.offerAmount)
-        console.log('request asset: ' + acceptance.body.requestAsset)
-        console.log('request amount: ' + acceptance.body.requestAmount)
-        console.log('---------------------------------')
-    })
-    proposal.fulfillments.forEach((fulfillment) => {
-        console.log('---------------------------------')
-        console.log('Fulfillment')
-        console.log('from public key: ' + fulfillment.publicKey.toString('hex'))
-        console.log('request: ' + fulfillment.body.requestId)
-        console.log('maker id: ' + fulfillment.body.makerId)
-        console.log('taker id: ' + fulfillment.body.takerId)
-        console.log('message: ' + fulfillment.body.message)
-        console.log('fulfullment: ' + JSON.stringify(fulfillment.body.fulfillment))
-        console.log('---------------------------------')
-    })
-    if (proposal.resolution) {
-        console.log('---------------------------------')
-        console.log('Proposal resolved accepting taker id: ' + proposal.resolution.body.takerId)
-        console.log('---------------------------------')
-    }
-    if (proposal.settlementInitiated) {
-        console.log('---------------------------------')
-        console.log('Settlement initiated with escrow id: ' + proposal.settlementInitiated.body.escrow)
-        console.log('---------------------------------')
-    }
-    if (proposal.signatureRequired) {
-        console.log('---------------------------------')
-        console.log('The buyer issued disbursement')
-        console.log('---------------------------------')
-    }
-}
-
-const processTransactionHistory = async (accountId) => {
-    const records = await transactionHistory(accountId)
-    records.forEach((item) => {
-        console.log('\n' + 'Source Account: ' + item.source_account)
-        console.log('Source Account Sequence: ' + item.source_account_sequence)
-        console.log('Created At: ' + item.created_at)
-        console.log('Memo: ' + item.memo)
-        console.log('Successful: ' + item.successful)
-        console.log('Fee Paid: ' + item.fee_paid)
-        console.log('Ledger number: ' + item.ledger)
-    })
-}
-
-const processViewEscrow = async (param, proposals) => {
-    const proposal = proposals.get(param)
-    if (!proposal.settlementInitiated) {
-        throw new Error('The settlement has not been initiated yet. No escrow account to view')
-    }
-    const escrowId = proposal.settlementInitiated.body.escrow
-    const accountResult = await viewEscrow(escrowId)
-    console.log('\nAccount Id: ' + accountResult.account_id)
-    console.log('Sequence: ' + accountResult.sequence)
-    console.log('Balance: ' + JSON.stringify(accountResult.balances[0]))
-    for (i = 0; i < accountResult.signers.length; i++) {
-        console.log('Signer: ' + JSON.stringify(accountResult.signers[i]))
-    }
-}
-
-module.exports = { processCounterOffer, processCounterOffers, processProposal, processProposals, processAcceptProposal, processAdjudication, processOfferHistory, processProposalResolved, processSettleProposal, processTransactionHistory, processFulfillment, processViewEscrow, processDisburse }
+module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processFulfillment, processDisburse }
