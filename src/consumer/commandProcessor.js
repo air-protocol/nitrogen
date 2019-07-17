@@ -113,8 +113,8 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         message = await encryptMessage(message, recipientKey)
         sendMessage('adjudicate', message)
 
-        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, Buffer.from(hostConfiguration.juryMeshPublicKey, 'hex'))
-        let copyMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, Buffer.from(hostConfiguration.juryMeshPublicKey, 'hex'))
+        let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
+        let copyMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
         copyMessage = await signMessage(copyMessage, keys)
         juryMessage = await signMessage(juryMessage, keys)
 
