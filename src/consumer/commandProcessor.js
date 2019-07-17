@@ -1,4 +1,3 @@
-const BJSON = require('buffer-json')
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement } = require('./agreement')
@@ -9,11 +8,11 @@ const logger = require('./clientLogging')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
     let recipientKey = undefined
-    if (previousHash.equals(proposal.hash)) {
+    if (previousHash === proposal.hash) {
         recipientKey = proposal.publicKey
     } else {
         for (i = 0; i < proposal.counterOffers.length; i++) {
-            if (previousHash.equals(proposal.counterOffers[i].hash)) {
+            if (previousHash === proposal.counterOffers[i].hash) {
                 recipientKey = proposal.counterOffers[i].publicKey
                 break
             }
@@ -23,7 +22,7 @@ const getKeyFromPreviousHash = (previousHash, proposal) => {
 }
 
 const processProposal = async (param, proposals, adjudications, keys) => {
-    let proposalBody = BJSON.parse(param)
+    let proposalBody = JSON.parse(param)
     let proposal = buildMessage(proposalBody, keys, proposalSchema)
     proposal = await signMessage(proposal, keys)
     sendMessage('proposal', proposal)
@@ -53,7 +52,7 @@ const processProposals = (proposals) => {
 }
 
 const processProposalResolved = async (param, proposals, keys) => {
-    let resolveBody = BJSON.parse(param)
+    let resolveBody = JSON.parse(param)
     let proposal = proposals.get(resolveBody.requestId)
     if (!proposal) {
         throw new Error("Unable to find proposal")
@@ -98,7 +97,8 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         adjudicateBody.previousHash = acceptance.hash
 
         let recipientKey
-        if (!keys.publicKey.equals(acceptance.publicKey)) {
+        let myKey = keys.publicKey.toString('hex')
+        if (myKey !== acceptance.publicKey) {
             recipientKey = acceptance.publicKey
         } else {
             recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -174,11 +174,12 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
 
 const processDisburse = async (param, proposals, adjudications, keys) => {
 
-    let disbursementBody = BJSON.parse(param)
+    let disbursementBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
     proposalAdjudications = adjudications.get(disbursementBody.requestId)
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -214,10 +215,11 @@ const processDisburse = async (param, proposals, adjudications, keys) => {
 
 const processFulfillment = async (param, proposals, keys) => {
     //previous hash is of acceptance
-    let fulfillmentBody = BJSON.parse(param)
+    let fulfillmentBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(fulfillmentBody.requestId, proposals)
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -240,7 +242,7 @@ const processFulfillment = async (param, proposals, keys) => {
 }
 
 const processAcceptProposal = async (param, proposals, keys) => {
-    let acceptBody = BJSON.parse(param)
+    let acceptBody = JSON.parse(param)
     let proposal = proposals.get(acceptBody.requestId)
     if (proposal) {
         let acceptanceMessage = await processNegotiationMessage(acceptBody, proposal, keys, 'accept')
@@ -251,7 +253,7 @@ const processAcceptProposal = async (param, proposals, keys) => {
 }
 
 const processSettleProposal = async (param, proposals, keys) => {
-    let settlement = BJSON.parse(param)
+    let settlement = JSON.parse(param)
     let settlementInitiatedBody = {}
     let { proposal, acceptance } = getResolvedAcceptance(settlement.requestId, proposals)
     let escrowPair
@@ -267,7 +269,8 @@ const processSettleProposal = async (param, proposals, keys) => {
         escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
     }
     let recipientKey
-    if (!keys.publicKey.equals(acceptance.publicKey)) {
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
         recipientKey = acceptance.publicKey
     } else {
         recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
@@ -298,7 +301,7 @@ const processSettleProposal = async (param, proposals, keys) => {
 }
 
 const processCounterOffer = async (param, proposals, keys) => {
-    let counterOfferBody = BJSON.parse(param)
+    let counterOfferBody = JSON.parse(param)
     let proposal = proposals.get(counterOfferBody.requestId)
     if (!proposal) {
         throw new Error('Unable to match counter offer to a proposal')

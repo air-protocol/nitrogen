@@ -24,7 +24,7 @@ if (hostConfiguration.refreshDirectory) {
 }
 
 const buildMessage = (body, key, schema, recipientKey) => {
-    let message = { uuid: uuid(), publicKey: key.publicKey, body: body, recipientKey: recipientKey }
+    let message = { uuid: uuid(), publicKey: key.publicKey.toString('hex'), body: body, recipientKey: recipientKey }
     if (schema) {
         ajv.validate(schema, message.body)
     }

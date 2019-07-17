@@ -20,7 +20,7 @@ const messageSeen = (messageUUID) => {
 const consumerProposalHandler = async (proposal, proposals, adjudications, keys) => {
     //If you have not processed the message
     //and it is from another party (your key !== message key)
-    if ((!messageSeen(proposal)) && (!keys.publicKey.equals(proposal.publicKey))) {
+    if ((!messageSeen(proposal)) && (!keys.publicKey.toString('hex') === proposal.publicKey)) {
         if (await !verifyMessage(proposal)) {
             logger.warn("Couldn't verify message signature on inbound proposal")
             return
@@ -65,7 +65,7 @@ const consumerAddMeHandler = (peerMessage) => {
 
 const negotiationMessageProcessor = async (peerMessage, keys) => {
     let processedPeerMessage = undefined
-    if (!messageSeen(peerMessage.uuid) && (keys.publicKey.equals(peerMessage.recipientKey))) {
+    if (!messageSeen(peerMessage.uuid) && (keys.publicKey.toString('hex') === peerMessage.recipientKey)) {
         processedPeerMessage = await decryptMessage(peerMessage, keys.privateKey)
         if (await !verifyMessage(peerMessage)) {
             throw new Error("Couldn't verify message signature")

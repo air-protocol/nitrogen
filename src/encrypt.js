@@ -1,6 +1,5 @@
 const crypto = require('crypto')
 const eccrypto = require('eccrypto')
-const BJSON = require('buffer-json')
 
 const createKeys = () => {
     let privateKey = eccrypto.generatePrivate()
@@ -10,27 +9,26 @@ const createKeys = () => {
 
 const signMessage = async (message, keys) => {
     let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
-    message.hash = hashed
-    message.publicKey = keys.publicKey
-    message.signature = await eccrypto.sign(keys.privateKey, hashed)
+    message.hash = hashed.toString('hex')
+    message.signature = await eccrypto.sign(keys.privateKey, hashed).toString('hex')
     return message
 }
 
 const encryptMessage = async (message, recipientKey) => {
-    message.body = await eccrypto.encrypt(recipientKey, Buffer.from(BJSON.stringify(message.body)))
+    message.body = await eccrypto.encrypt(recipientKey, Buffer.from(JSON.stringify(message.body)))
     return message
 }
 
 const decryptMessage = async (message, privateKey) => {
     let decryptedBody = await eccrypto.decrypt(privateKey, message.body)
-    message.body = BJSON.parse(decryptedBody)
+    message.body = JSON.parse(decryptedBody)
     return message
 }
 
 const verifyMessage = async (message) => {
     let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
     try {
-        await eccrypto.verify(message.publicKey, hashed, message.signature)
+        await eccrypto.verify(Buffer.from(message.publicKey, 'hex'), hashed, message.signature)
         return true
     } catch (e) {
         return false
