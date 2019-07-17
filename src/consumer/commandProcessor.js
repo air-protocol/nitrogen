@@ -292,4 +292,11 @@ const processCounterOffer = async (param, proposals, keys) => {
     proposal.counterOffers.push(counterOfferMessage)
 }
 
-module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processFulfillment, processDisburse }
+const processRuling = async (param, adjudications, keys) => {
+    let ruling = JSON.parse(param)
+    let proposalAdjudications = adjudications.get(ruling.requestId)
+    let adjudication = proposalAdjudications[ruling.adjudicationIndex]
+    let agreement = adjudication.body.agreement
+}
+
+module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling }

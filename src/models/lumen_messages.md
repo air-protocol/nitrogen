@@ -129,3 +129,16 @@ disbursed message is generated and its previous hash is to the resolved acceptan
 ~~~
 disburse { "requestId" : "cde1234", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}
 ~~~
+
+## Adjudication
+---
+
+### Adjudicate
+~~~
+adjudicate cde1234
+~~~
+
+### Ruling
+~~~
+ruling { "requestId" : "cde1234", "adjudicationIndex" : 1, "favor" : "buyer" }
+~~~
