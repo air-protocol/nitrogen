@@ -178,8 +178,8 @@ const transactionHistory = async (accountId) => {
 
 const viewTransactionOperations = async (xdrTransaction) => {
     const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
-    const envelope = xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
-    const transaction = new Transaction(envelope)
+    const envelope = stellar.xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new stellar.Transaction(envelope)
     return transaction.operations
 }
 
