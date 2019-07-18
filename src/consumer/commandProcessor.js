@@ -1,8 +1,8 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { buildAgreement } = require('./agreement')
-const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema } = require('../models/schemas')
-const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction } = require('./chain')
+const { buildAgreement, pullValuesFromAgreement } = require('./agreement')
+const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema } = require('../models/schemas')
+const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
 
 const getKeyFromPreviousHash = (previousHash, proposal) => {
@@ -295,11 +295,65 @@ const processCounterOffer = async (param, proposals, keys) => {
     proposal.counterOffers.push(counterOfferMessage)
 }
 
-const processRuling = async (param, adjudications, keys) => {
+const processRuling = async (param, adjudications, rulings, keys) => {
     let ruling = JSON.parse(param)
     let proposalAdjudications = adjudications.get(ruling.requestId)
+    if (proposalAdjudications.length === 0) {
+        throw new Error('This request id is not in dispute')
+    }
+
     let adjudication = proposalAdjudications[ruling.adjudicationIndex]
     let agreement = adjudication.body.agreement
+
+    const { buyerMeshKey,
+        sellerMeshKey,
+        buyerStellarKey,
+        sellerStellarKey,
+        escrowStellarKey,
+        nativeAmount,
+        challengeStake,
+        makerId,
+        takerId,
+        requestId,
+        acceptanceHash } = pullValuesFromAgreement(agreement)
+
+    rulingBody.makerId = makerId
+    rulingBody.takerId = takerId
+    rulingBody.requestId = requestId
+    rulingBody.message = 'ruling'
+    rulingBody.favor = ruling.favor
+    rulingBody.justification = ruling.justification
+    rulingBody.previousHash = acceptanceHash
+
+    let buyerMessage = buildMessage(rulingBody, keys, rulingSchema, buyerMeshKey)
+    let sellerMessage = buildMessage(rulingBody, keys, rulingSchema, sellerMeshKey)
+    let copyMessage
+    let transaction
+
+    if (ruling.favor === 'buyer') {
+        transaction = await createFavorBuyerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, challengeStake)
+        buyerMessage.body.transaction = transaction
+        copyMessage = buildMessage(rulingBody, keys, rulingSchema, buyerMeshKey)
+        copyMessage.body.transaction = transaction
+    } else {
+        transaction = await createFavorSellerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount)
+        sellerMessage.body.transaction = transaction
+        copyMessage = buildMessage(rulingBody, keys, rulingSchema, sellerMeshKey)
+        copyMessage.body.transaction = transaction
+    }
+
+    copyMessage = await signMessage(copyMessage, keys)
+
+    buyerMessage = await signMessage(buyerMessage, keys)
+    buyerMessage = await encryptMessage(buyerMessage, buyerMeshKey)
+
+    sellerMessage = await signMessage(sellerMessage, keys)
+    sellerMessage = await encryptMessage(sellerMessage, sellerMeshKey)
+
+    sendMessage(buyerMessage, 'ruling')
+    sendMessage(sellerMessage, 'ruling')
+
+    rulings.set(requestId, copyMessage)
 }
 
-module.exports = { processCounterOffer,  processProposal,  processAcceptProposal, processAdjudication,  processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling }
+module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling }

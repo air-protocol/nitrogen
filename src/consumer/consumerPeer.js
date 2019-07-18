@@ -11,7 +11,8 @@ const { consumerAdjudicationHandler,
     consumerProposalResolvedHandler,
     consumerFulfillmentHandler,
     consumerSettlementInitiatedHandler,
-    consumerSignatureRequiredHandler } = require('./consumerMessageHandler')
+    consumerSignatureRequiredHandler,
+    consumerRulingHandler } = require('./consumerMessageHandler')
 
 const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true })
@@ -37,7 +38,7 @@ const sendMessage = (messageType, message) => {
     })
 }
 
-const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudications) => {
+const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudications, rulings) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
@@ -65,6 +66,9 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudicat
             })
             peerSocket.on('adjudicate', (adjucationMessage) => {
                 consumerAdjudicationHandler(adjucationMessage, adjudications, keys)
+            })
+            peerSocket.on('ruling', (rulingMessage) => {
+                consumerRulingHandler(rulingMessage, rulings, keys)
             })
             resolve(peerSocket)
         })

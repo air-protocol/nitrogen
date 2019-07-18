@@ -179,6 +179,18 @@ const consumerAdjudicationHandler = async (peerMessage, adjudications, keys) => 
     }
 }
 
+const consumerRulingHandler = async (peerMessage, rulings, keys) => {
+    try {
+        let rulingMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (!rulingMessage) {
+            return
+        }
+        rulings.set(rulingMessage.body.requestId, rulingMessage)
+    } catch (e) {
+        logger.warn("unable to process inbound ruling: " + e)
+    }
+}
+
 const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) => {
     try {
         let signatureRequiredMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -199,4 +211,4 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler }
+module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler, consumerRulingHandler }

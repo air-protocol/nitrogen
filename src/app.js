@@ -14,7 +14,8 @@ const { addMeHandler,
     proposalResolvedHandler,
     fulfillmentHandler,
     settlementInitiatedHandler,
-    signatureRequiredHandler } = require('./message')
+    signatureRequiredHandler,
+    rulingHandler } = require('./message')
 
 if (hostConfiguration.refreshDirectory) {
     localCache.setKey('directory', hostConfiguration.bootNodes)
@@ -49,6 +50,7 @@ server.listen(hostConfiguration.port, hostConfiguration.address, () => {
         socket.on('settlementInitiated', settlementInitiatedHandler)
         socket.on('signatureRequired', signatureRequiredHandler)
         socket.on('adjudicate', adjudicationHandler)
+        socket.on('ruling', rulingHandler)
         socket.on('addMe', (message) => {
             if (addMeHandler(message)) {
                 connectToPeers()

@@ -10,7 +10,7 @@ const platformFees = 10
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
     //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
-    const baseAmount = 2 
+    const baseAmount = 2
 
     let buyerAccount
     try {
@@ -176,4 +176,91 @@ const transactionHistory = async (accountId) => {
     return responseJson._embedded.records
 }
 
-module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction }
+const createFavorBuyerTransaction = async (secret, escrowStellarKey, buyerStellarKey, challengeStake) => {
+//ruling in favor of buyer - pay challenge fees to jury, platform, and merge escrow to buyers account
+    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const escrowAccount = await server.loadAccount(escrowStellarKey)
+    const platformKey = hostConfiguration.platformKey
+
+    const juryPair = stellar.Keypair.fromSecret(secret)
+
+    const paymentToJury = {
+        destination: juryPair.publicKey(),
+        asset: stellar.Asset.native(),
+        amount: challengeStake.toString()
+    }
+
+    const paymentToPlatform = {
+        destination: platformKey,
+        asset: stellar.Asset.native(),
+        amount: platformFees.toString()
+    }
+
+    const mergeToBuyer = {
+        destination: buyerStellarKey
+    }
+
+    const txOptions = {
+        fee: await server.fetchBaseFee()
+    }
+
+    let transaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
+        .addOperation(stellar.Operation.payment(paymentToJury))
+        .addOperation(stellar.Operation.payment(paymentToPlatform))
+        .addOperation(stellar.Operation.accountMerge(mergeToBuyer))
+        .setTimeout(stellar.TimeoutInfinite)
+        .build()
+
+    transaction.sign(juryPair)
+
+    return transaction.toEnvelope().toXDR('base64')
+}
+
+const createFavorSellerTransaction = async (ruling, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount) => {
+//ruling in favor of seller - pay challenge fees to jury, offerAmount to seller, and merge escrow to buyers account
+    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const escrowAccount = await server.loadAccount(escrowStellarKey)
+    const platformKey = hostConfiguration.platformKey
+
+    const juryPair = stellar.Keypair.fromSecret(secret)
+
+    const paymentToJury = {
+        destination: juryPair.publicKey(),
+        asset: stellar.Asset.native(),
+        amount: challengeStake.toString()
+    }
+
+    const paymentToPlatform = {
+        destination: platformKey,
+        asset: stellar.Asset.native(),
+        amount: platformFees.toString()
+    }
+
+    const paymentToSeller = {
+        destination: sellerStellarKey,
+        asset: stellar.Asset.native(),
+        amount: nativeAmount.toString()
+    }
+
+    const mergeToBuyer = {
+        destination: buyerStellarKey
+    }
+
+    const txOptions = {
+        fee: await server.fetchBaseFee()
+    }
+
+    let transaction = new stellar.TransactionBuilder(escrowAccount, txOptions)
+        .addOperation(stellar.Operation.payment(paymentToJury))
+        .addOperation(stellar.Operation.payment(paymentToPlatform))
+        .addOperation(stellar.Operation.payment(paymentToSeller))
+        .addOperation(stellar.Operation.accountMerge(mergeToBuyer))
+        .setTimeout(stellar.TimeoutInfinite)
+        .build()
+
+    transaction.sign(juryPair)
+
+    return transaction.toEnvelope().toXDR('base64')
+}
+
+module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction }

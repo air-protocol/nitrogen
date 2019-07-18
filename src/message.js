@@ -99,6 +99,15 @@ const adjudicationHandler = (peerMessage) => {
     return false
 }
 
+const rulingHandler = (peerMessage) => {
+    if (!messageSeen(peerMessage.uuid)) {
+        logger.info('heard ruling uuid: ' + peerMessage.uuid)
+        serverSocket.emit('ruling', peerMessage)
+        return true
+    }
+    return false
+}
+
 const addMeHandler = (peerMessage) => {
     if (peerMessage.address === thisAddress) {
         return false
@@ -119,4 +128,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, adjudicationHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler, signatureRequiredHandler }
+module.exports = { addMeHandler, adjudicationHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler, signatureRequiredHandler, rulingHandler }
