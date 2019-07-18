@@ -143,20 +143,17 @@ const presentPendingTransaction = async (param, proposals) => {
     if (!proposal.signatureRequired) {
         throw new Error('The buyer has not yet disbursed. No contract to view.')
     }
-    const pendingOperations = viewTransactionOperations(proposal.signatureRequired.body.transaction)
+    const pendingOperations = await viewTransactionOperations(proposal.signatureRequired.body.transaction)
     console.log('Pending Operations')
-    const result = Promise.resolve(pendingOperations)
-    result.then((pendingOperations) => {
-        pendingOperations.forEach((operation) => {
-            console.log('type: ' + operation.type)
-            if (operation.destination) {
-                console.log('destination: ' + operation.destination)
-            }
-            if (operation.amount) {
-                console.log('amount: ' + operation.amount)
-            }
-            console.log('----------------------------')
-        })
+    pendingOperations.forEach((operation) => {
+        console.log('type: ' + operation.type)
+        if (operation.destination) {
+            console.log('destination: ' + operation.destination)
+        }
+        if (operation.amount) {
+            console.log('amount: ' + operation.amount)
+        }
+        console.log('----------------------------')
     })
 }
 
