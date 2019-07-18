@@ -1,4 +1,4 @@
-const { transactionHistory, viewEscrow } = require('./chain')
+const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chain')
 
 const presentOpenCases = (adjudications) => {
     console.log('Proposal request ids in dispute')
@@ -138,5 +138,23 @@ const presentViewEscrow = async (param, proposals) => {
     }
 }
 
+const presentPendingTransaction = async (param, proposals) => {
+    const proposal = proposals.get(param)
+    if (!proposal.signatureRequired) {
+        throw new Error('The buyer has not yet disbursed. No contract to view.')
+    }
+    const pendingOperations = await viewTransactionOperations(proposal.signatureRequired.body.transaction)
+    console.log('Pending Operations')
+    pendingOperations.forEach((operation) => {
+        console.log('type: ' + operation.type)
+        if (operation.destination) {
+            console.log('destination: ' + operation.destination)
+        }
+        if (operation.amount) {
+            console.log('amount: ' + operation.amount)
+        }
+        console.log('----------------------------')
+    })
+}
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow }
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction }

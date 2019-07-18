@@ -10,7 +10,7 @@ const platformFees = 10
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
     //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
-    const baseAmount = 2 
+    const baseAmount = 2
 
     let buyerAccount
     try {
@@ -176,4 +176,11 @@ const transactionHistory = async (accountId) => {
     return responseJson._embedded.records
 }
 
-module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction }
+const viewTransactionOperations = async (xdrTransaction) => {
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = stellar.xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new stellar.Transaction(envelope)
+    return transaction.operations
+}
+
+module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction, viewTransactionOperations}
