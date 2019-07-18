@@ -1,9 +1,11 @@
 const { transactionHistory, viewEscrow } = require('./chain')
 
-const presentOpenCases = (adjudications) => {
+const presentOpenCases = (adjudications, rulings) => {
     console.log('Proposal request ids in dispute')
     adjudications.forEach((value, key) => {
-        console.log(key)
+        if (!rulings.get(key)) {
+            console.log(key)
+        }
     });
 }
 
