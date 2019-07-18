@@ -176,4 +176,11 @@ const transactionHistory = async (accountId) => {
     return responseJson._embedded.records
 }
 
-module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction }
+const viewTransactionOperations = async (xdrTransaction) => {
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new Transaction(envelope)
+    return transaction.operations
+}
+
+module.exports = { initiateSettlement, transactionHistory, viewEscrow, createBuyerDisburseTransaction, submitDisburseTransaction, viewTransactionOperations}
