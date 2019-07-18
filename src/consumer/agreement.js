@@ -6,9 +6,11 @@ const buildMessageChain = (proposal, message) => {
         }
     }
     if (proposal.hash === message.body.previousHash) {
+        //create a shallow copy of proposal
         return {
             "body": {
                 "message": "proposal",
+                "requestId": proposal.body.requestId,
                 "makerId": proposal.body.makerId,
                 "takerId": proposal.body.takerId,
                 "offerAsset": proposal.body.offerAsset,

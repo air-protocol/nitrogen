@@ -140,5 +140,5 @@ adjudicate cde1234
 
 ### Ruling
 ~~~
-ruling { "secret" : "somekey", "requestId" : "cde1234", "adjudicationIndex" : 1, "favor" : "buyer", "justification" : "for the fact" }
+ruling { "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "adjudicationIndex" : 0, "favor" : "buyer", "justification" : "for the fact" }
 ~~~

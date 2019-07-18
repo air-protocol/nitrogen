@@ -82,7 +82,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudicat
     return promise
 }
 
-const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adjudications) => {
+const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adjudications, rulings) => {
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -101,7 +101,7 @@ const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adju
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals, adjudications)
+            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals, adjudications, rulings)
             peers.push(peer)
         } catch (e) {
             logger.warn('error connecting to peer: ' + e)

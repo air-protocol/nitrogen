@@ -34,7 +34,6 @@ const consumerProposalHandler = async (proposal, proposals, adjudications, keys)
         proposal.acceptances = []
         proposal.fulfillments = []
         proposals.set(proposal.body.requestId, proposal)
-        adjudications.set(proposal.body.requestId, [])
     }
 }
 
@@ -172,8 +171,10 @@ const consumerAdjudicationHandler = async (peerMessage, adjudications, keys) => 
         if (!adjudicationMessage) {
             return
         }
-        let proposalAdjudications = adjudications.get(adjudicationMessage.body.requestId)
-        proposalAdjudications.push(adjudicationMessage)
+        if(!adjudications.get(adjudicationMessage.body.requestId)) {
+            adjudications.set(adjudicationMessage.body.requestId, [])
+        }
+        adjudications.get(adjudicationMessage.body.requestId).push(adjudicationMessage)
     } catch (e) {
         logger.warn("unable to process inbound adjudication: " + e)
     }

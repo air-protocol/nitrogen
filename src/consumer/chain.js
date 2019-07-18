@@ -10,7 +10,7 @@ const platformFees = 10
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
     //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
-    const baseAmount = 2
+    const baseAmount = 3
 
     let buyerAccount
     try {
@@ -166,7 +166,7 @@ const submitDisburseTransaction = async (secret, xdrTransaction) => {
     try {
         const transactionRecord = await server.submitTransaction(transaction)
     } catch (e) {
-        throw new Error('unable to disburse funds: ' + e.response.data.extras)
+        throw new Error('unable to disburse funds: ' + JSON.stringify(e.response.data.extras))
     }
 }
 
@@ -216,7 +216,7 @@ const createFavorBuyerTransaction = async (secret, escrowStellarKey, buyerStella
     return transaction.toEnvelope().toXDR('base64')
 }
 
-const createFavorSellerTransaction = async (ruling, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount) => {
+const createFavorSellerTransaction = async (secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount) => {
 //ruling in favor of seller - pay challenge fees to jury, offerAmount to seller, and merge escrow to buyers account
     const server = new stellar.Server('https://horizon-testnet.stellar.org')
     const escrowAccount = await server.loadAccount(escrowStellarKey)

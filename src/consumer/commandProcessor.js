@@ -33,7 +33,6 @@ const processProposal = async (param, proposals, adjudications, keys) => {
     proposal.acceptances = []
     proposal.fulfillments = []
     proposals.set(proposal.body.requestId, proposal)
-    adjudications.set(proposal.body.requestId, [])
 }
 
 const processProposalResolved = async (param, proposals, keys) => {
@@ -55,9 +54,10 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
     }
     try {
         let message = buildMessage(messageBody, keys, negotiationSchema, recipientKey)
-        let copyMessage = buildMessage(messageBody, keys, negotiationSchema, recipientKey)
-        copyMessage = await signMessage(copyMessage, keys)
         message = await signMessage(message, keys)
+
+        let copyMessage = JSON.parse(JSON.stringify(message))
+
         message = await encryptMessage(message, recipientKey)
         sendMessage(messageType, message)
         return copyMessage
@@ -71,7 +71,6 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
     if (!proposal.settlementInitiated) {
         throw new Error('The settlement has not yet been initiated')
     }
-    let proposalAdjudications = adjudications.get(proposal.body.requestId)
     try {
         let adjudicateBody = {}
         adjudicateBody.makerId = proposal.body.makerId
@@ -99,14 +98,17 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         sendMessage('adjudicate', message)
 
         let juryMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
-        let copyMessage = buildMessage(adjudicateBody, keys, adjudicateSchema, hostConfiguration.juryMeshPublicKey)
-        copyMessage = await signMessage(copyMessage, keys)
         juryMessage = await signMessage(juryMessage, keys)
+
+        let copyMessage = JSON.parse(JSON.stringify(juryMessage))
 
         juryMessage = await encryptMessage(juryMessage, Buffer.from(hostConfiguration.juryMeshPublicKey, 'hex'))
         sendMessage('adjudicate', juryMessage)
 
-        proposalAdjudications.push(copyMessage)
+        if (!adjudications.get(proposal.body.requestId)) {
+            adjudications.set(proposal.body.requestId, [])
+        }
+        adjudications.get(proposal.body.requestId).push(copyMessage)
     } catch (e) {
         throw new Error('unable to sign and encrypt: ' + e)
     }
@@ -148,20 +150,24 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
     signatureRequiredBody.previousHash = acceptance.hash
 
     let message = buildMessage(signatureRequiredBody, keys, signatureRequiredSchema, recipientKey)
-    let copyMessage = buildMessage(signatureRequiredBody, keys, signatureRequiredSchema, recipientKey)
-    copyMessage = await signMessage(copyMessage, keys)
-
     message = await signMessage(message, keys)
+
+    let copyMessage = JSON.parse(JSON.stringify(message))
+
     message = await encryptMessage(message, recipientKey)
     sendMessage('signatureRequired', message)
+
     proposal.signatureRequired = copyMessage
 }
 
-const processDisburse = async (param, proposals, adjudications, keys) => {
+const processDisburse = async (param, proposals, adjudications, rulings, keys) => {
 
     let disbursementBody = JSON.parse(param)
     let { proposal, acceptance } = getResolvedAcceptance(disbursementBody.requestId, proposals)
-    proposalAdjudications = adjudications.get(disbursementBody.requestId)
+    if (!proposal.settlementInitiated) {
+        throw new Error('The escrow account is not established.  Initiate settlement.')
+    }
+
     let recipientKey
     let myKey = keys.publicKey.toString('hex')
     if (myKey !== acceptance.publicKey) {
@@ -172,13 +178,17 @@ const processDisburse = async (param, proposals, adjudications, keys) => {
     if (!recipientKey) {
         throw new Error('Unable to match up hashes')
     }
-    if (!proposal.settlementInitiated) {
-        throw new Error('The escrow account is not established.  Initiate settlement.')
-    }
-    if (proposalAdjudications.length > 0) {
-        if (proposal.ruling && proposal.ruling.transaction) {
-            //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
-            submitDisburseTransaction(disbursementBody.secret, proposal.ruling.transaction)
+
+    proposalAdjudications = adjudications.get(proposal.body.requestId)
+    if (proposalAdjudications && proposalAdjudications.length > 0) {
+        let ruling = rulings.get(proposal.body.requestId)
+        if (ruling) {
+            if (ruling.body.transaction) {
+                //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
+                submitDisburseTransaction(disbursementBody.secret, ruling.body.transaction)
+            } else {
+                throw new Error('jury did not rule in your favor')
+            }
         } else {
             throw new Error('transaction is in dispute')
         }
@@ -214,10 +224,10 @@ const processFulfillment = async (param, proposals, keys) => {
     }
     try {
         let message = buildMessage(fulfillmentBody, keys, fulfillmentSchema, recipientKey)
-        let copyMessage = buildMessage(fulfillmentBody, keys, fulfillmentSchema, recipientKey)
-        copyMessage = await signMessage(copyMessage, keys)
-
         message = await signMessage(message, keys)
+
+        let copyMessage = JSON.parse(JSON.stringify(message))
+
         message = await encryptMessage(message, recipientKey)
         sendMessage('fulfillment', message)
         proposal.fulfillments.push(copyMessage)
@@ -272,10 +282,10 @@ const processSettleProposal = async (param, proposals, keys) => {
         settlementInitiatedBody.previousHash = acceptance.hash
 
         let message = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema, recipientKey)
-        let copyMessage = buildMessage(settlementInitiatedBody, keys, settlementInitiatedSchema, recipientKey)
-        copyMessage = await signMessage(copyMessage, keys)
-
         message = await signMessage(message, keys)
+
+        let copyMessage = JSON.parse(JSON.stringify(message))
+
         message = await encryptMessage(message, recipientKey)
         sendMessage('settlementInitiated', message)
         proposal.settlementInitiated = copyMessage
@@ -317,6 +327,7 @@ const processRuling = async (param, adjudications, rulings, keys) => {
         requestId,
         acceptanceHash } = pullValuesFromAgreement(agreement)
 
+    let rulingBody = {}
     rulingBody.makerId = makerId
     rulingBody.takerId = takerId
     rulingBody.requestId = requestId
@@ -325,33 +336,31 @@ const processRuling = async (param, adjudications, rulings, keys) => {
     rulingBody.justification = ruling.justification
     rulingBody.previousHash = acceptanceHash
 
+    let sellerRulingBody = JSON.parse(JSON.stringify(rulingBody))
+
     let buyerMessage = buildMessage(rulingBody, keys, rulingSchema, buyerMeshKey)
-    let sellerMessage = buildMessage(rulingBody, keys, rulingSchema, sellerMeshKey)
-    let copyMessage
-    let transaction
+    let sellerMessage = buildMessage(sellerRulingBody, keys, rulingSchema, sellerMeshKey)
 
     if (ruling.favor === 'buyer') {
-        transaction = await createFavorBuyerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, challengeStake)
-        buyerMessage.body.transaction = transaction
-        copyMessage = buildMessage(rulingBody, keys, rulingSchema, buyerMeshKey)
-        copyMessage.body.transaction = transaction
+        buyerMessage.body.transaction = await createFavorBuyerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, challengeStake)
     } else {
-        transaction = await createFavorSellerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount)
-        sellerMessage.body.transaction = transaction
-        copyMessage = buildMessage(rulingBody, keys, rulingSchema, sellerMeshKey)
-        copyMessage.body.transaction = transaction
+        sellerMessage.body.transaction = await createFavorSellerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount)
+    }
+    buyerMessage = await signMessage(buyerMessage, keys)
+    sellerMessage = await signMessage(sellerMessage, keys)
+
+    let copyMessage
+    if (ruling.favor === 'buyer') {
+        copyMessage = JSON.parse(JSON.stringify(buyerMessage))
+    } else {
+        copyMessage = JSON.parse(JSON.stringify(sellerMessage))
     }
 
-    copyMessage = await signMessage(copyMessage, keys)
-
-    buyerMessage = await signMessage(buyerMessage, keys)
     buyerMessage = await encryptMessage(buyerMessage, buyerMeshKey)
-
-    sellerMessage = await signMessage(sellerMessage, keys)
     sellerMessage = await encryptMessage(sellerMessage, sellerMeshKey)
 
-    sendMessage(buyerMessage, 'ruling')
-    sendMessage(sellerMessage, 'ruling')
+    sendMessage('ruling', buyerMessage )
+    sendMessage('ruling', sellerMessage)
 
     rulings.set(requestId, copyMessage)
 }
