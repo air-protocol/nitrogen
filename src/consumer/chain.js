@@ -10,7 +10,7 @@ const platformFees = 10
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
     //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
-    const baseAmount = 2 
+    const baseAmount = 2
 
     let buyerAccount
     try {

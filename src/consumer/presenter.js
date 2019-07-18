@@ -1,4 +1,5 @@
 const { transactionHistory, viewEscrow } = require('./chain')
+const { Transaction, xdr } = require('stellar-sdk')
 
 const presentOpenCases = (adjudications) => {
     console.log('Proposal request ids in dispute')
@@ -138,5 +139,17 @@ const presentViewEscrow = async (param, proposals) => {
     }
 }
 
+const presentPendingTransaction = async (param, proposals) => {
+    const proposal = proposals.get(param)
+    if (!proposal.signatureRequired) {
+        throw new Error('The buyer has not yet disbursed. No contract to view.')
+    }
+    const xdrTransaction = proposal.signatureRequired.body.transaction
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new Transaction(envelope)
+    console.log(JSON.stringify(transaction.operations))
+}
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow }
+
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction }
