@@ -1,9 +1,11 @@
 const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chain')
 
-const presentOpenCases = (adjudications) => {
+const presentOpenCases = (adjudications, rulings) => {
     console.log('Proposal request ids in dispute')
     adjudications.forEach((value, key) => {
-        console.log(key)
+        if (!rulings.get(key)) {
+            console.log(key)
+        }
     });
 }
 
@@ -95,19 +97,16 @@ const presentOfferHistory = (param, proposals) => {
 
 const presentProposals = (proposals) => {
     console.clear()
-    if (proposals.size) {
-        proposals.forEach((proposal, requestId) => {
-            console.log('---------------------------------')
-            console.log('request: ' + requestId)
-            console.log('offer asset: ' + proposal.body.offerAsset)
-            console.log('offer amount: ' + proposal.body.offerAmount)
-            console.log('request asset: ' + proposal.body.requestAsset)
-            console.log('request amount: ' + proposal.body.requestAmount)
-            console.log('---------------------------------')
-        })
-    } else {
-        logger.warn('no proposals')
-    }
+    console.log('Proposals:')
+    proposals.forEach((proposal, requestId) => {
+        console.log('---------------------------------')
+        console.log('request: ' + requestId)
+        console.log('offer asset: ' + proposal.body.offerAsset)
+        console.log('offer amount: ' + proposal.body.offerAmount)
+        console.log('request asset: ' + proposal.body.requestAsset)
+        console.log('request amount: ' + proposal.body.requestAmount)
+        console.log('---------------------------------')
+    })
 }
 
 const presentTransactionHistory = async (accountId) => {

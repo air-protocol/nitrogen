@@ -85,4 +85,17 @@ const signatureRequiredSchema = {
     }
 }
 
-module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema }
+const rulingSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "favor": { "type": "string" },
+        "justification": { "type": "string" },
+        "transaction": { "type": "object" },
+        "previousHash": { "type": "object" }
+    }
+}
+
+module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema }

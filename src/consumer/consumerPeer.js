@@ -11,7 +11,8 @@ const { consumerAdjudicationHandler,
     consumerProposalResolvedHandler,
     consumerFulfillmentHandler,
     consumerSettlementInitiatedHandler,
-    consumerSignatureRequiredHandler } = require('./consumerMessageHandler')
+    consumerSignatureRequiredHandler,
+    consumerRulingHandler } = require('./consumerMessageHandler')
 
 const Ajv = require('ajv')
 const ajv = new Ajv({ allErrors: true })
@@ -37,7 +38,7 @@ const sendMessage = (messageType, message) => {
     })
 }
 
-const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudications) => {
+const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudications, rulings) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
@@ -66,6 +67,9 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudicat
             peerSocket.on('adjudicate', (adjucationMessage) => {
                 consumerAdjudicationHandler(adjucationMessage, adjudications, keys)
             })
+            peerSocket.on('ruling', (rulingMessage) => {
+                consumerRulingHandler(rulingMessage, rulings, keys)
+            })
             resolve(peerSocket)
         })
         peerSocket.on('connect_error', (error) => {
@@ -78,7 +82,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudicat
     return promise
 }
 
-const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adjudications) => {
+const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adjudications, rulings) => {
 
     let directory = localCache.getKey('directory')
     if (!directory) {
@@ -97,7 +101,7 @@ const consumerConnectToPeers = async (clientio, bootNodes, keys, proposals, adju
     while (peerDirectory.length && (peers.length < hostConfiguration.outboundCount)) {
         let peerIndex = Math.floor(Math.random() * peerDirectory.length)
         try {
-            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals, adjudications)
+            let peer = await consumerConnectToPeer(clientio, peerDirectory[peerIndex], keys, proposals, adjudications, rulings)
             peers.push(peer)
         } catch (e) {
             logger.warn('error connecting to peer: ' + e)

@@ -8,7 +8,7 @@ stellar.Network = Network
 stellar.Asset = Asset
 stellar.Keypair = Keypair
 
-const { initiateSettlement, createBuyerDisburseTransaction } = require('../../src/consumer/chain')
+const { initiateSettlement, createBuyerDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('../../src/consumer/chain')
 
 //Assemble
 const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
@@ -16,6 +16,7 @@ const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
 const platformPublic = 'GCFEOK477RXJZYDV642BRMBV43FO4NTMKROEXZHW45FQ7DW6XWTAUFVM'
 const escrowSecret = 'SDQLRJVYLL2CUKXYPS3OSL6HPXKN2F47HTWRIRYCJJUUIJIKBVFQKTSV'
 const escrowPublic = 'GAQK62EZBRINSGVCWRKOTYTK3JOLKODYLI223OMPOYOHPOXHW66XG3KQ'
+const jurySecret = 'SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J'
 const juryPublic = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
 const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
 const challengeStake = 10
@@ -38,6 +39,12 @@ const escrowAccount = {
     incrementSequenceNumber: () => { }
 }
 
+const juryAccount = {
+    sequenceNumber: () => 1,
+    accountId: () => juryPublic,
+    incrementSequenceNumber: () => { }
+}
+
 const mockLoadAccount = jest.fn(function (accountId) {
     return new Promise((resolve, reject) => {
         if (accountId === buyerPublic) {
@@ -45,6 +52,9 @@ const mockLoadAccount = jest.fn(function (accountId) {
         } 
         else if (accountId === escrowPublic) {
             resolve(escrowAccount)
+        }
+        else if (accountId === juryPublic) {
+            resolve(juryAccount)
         }
         else {
             reject('bad account id')
@@ -92,8 +102,8 @@ test('initiateSettlement creates funded escrow', async () => {
 
     //Challenge stake is 10
     //Native amount paid is 200
-    //Base is 2
-    expect(transaction.operations[0].startingBalance).toEqual('222.0000000')
+    //Base is 3
+    expect(transaction.operations[0].startingBalance).toEqual('223.0000000')
 })
 
 test('initiateSettlement configures escrow', async () => {
@@ -121,7 +131,6 @@ test('initiateSettlement configures escrow', async () => {
 test('createBuyerDisburseTransactionDoes', async() => {
     //Assemble
     const amount = 100
-    buyerKeyPair = stellar.Keypair.random()
 
     //Action
     const xdrTransaction = await createBuyerDisburseTransaction(buyerSecret, sellerPublic, challengeStake, amount, escrowPublic)
@@ -138,5 +147,50 @@ test('createBuyerDisburseTransactionDoes', async() => {
     expect(transaction.operations[1].amount).toEqual('10.0000000')
     expect(transaction.operations[2].type).toEqual('accountMerge')
     expect(transaction.operations[2].destination).toEqual(buyerPublic)
+    expect(transaction.source).toEqual(escrowPublic)
+})
+
+test('createFavorBuyerTransactionDoes', async() => {
+    //Assemble
+
+    //Action
+    const xdrTransaction = await createFavorBuyerTransaction(jurySecret, escrowPublic, buyerPublic, challengeStake)
+
+    //Assert
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new Transaction(envelope)
+    expect(transaction.operations[0].type).toEqual('payment')
+    expect(transaction.operations[0].destination).toEqual(juryPublic)
+    expect(transaction.operations[0].amount).toEqual('10.0000000')
+    expect(transaction.operations[1].type).toEqual('payment')
+    expect(transaction.operations[1].destination).toEqual(platformPublic)
+    expect(transaction.operations[1].amount).toEqual('10.0000000')
+    expect(transaction.operations[2].type).toEqual('accountMerge')
+    expect(transaction.operations[2].destination).toEqual(buyerPublic)
+    expect(transaction.source).toEqual(escrowPublic)
+})
+
+test('createFavorSellerTransactionDoes', async() => {
+    //Assemble
+
+    //Action
+    const xdrTransaction = await createFavorSellerTransaction(jurySecret, escrowPublic, buyerPublic, sellerPublic, challengeStake, nativeAmount)
+
+    //Assert
+    const xdrBuffer = Buffer.from(xdrTransaction, 'base64')
+    const envelope = xdr.TransactionEnvelope.fromXDR(xdrBuffer, 'base64')
+    const transaction = new Transaction(envelope)
+    expect(transaction.operations[0].type).toEqual('payment')
+    expect(transaction.operations[0].destination).toEqual(juryPublic)
+    expect(transaction.operations[0].amount).toEqual('10.0000000')
+    expect(transaction.operations[1].type).toEqual('payment')
+    expect(transaction.operations[1].destination).toEqual(platformPublic)
+    expect(transaction.operations[1].amount).toEqual('10.0000000')
+    expect(transaction.operations[2].type).toEqual('payment')
+    expect(transaction.operations[2].destination).toEqual(sellerPublic)
+    expect(transaction.operations[2].amount).toEqual('200.0000000')
+    expect(transaction.operations[3].type).toEqual('accountMerge')
+    expect(transaction.operations[3].destination).toEqual(buyerPublic)
     expect(transaction.source).toEqual(escrowPublic)
 })
