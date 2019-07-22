@@ -85,6 +85,16 @@ const signatureRequiredSchema = {
     }
 }
 
+const disbursedSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "previousHash": { "type": "object" }
+    }
+}
+
 const rulingSchema = {
     "properties": {
         "makerId": { "type": "string" },
@@ -98,4 +108,4 @@ const rulingSchema = {
     }
 }
 
-module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema }
+module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema }
