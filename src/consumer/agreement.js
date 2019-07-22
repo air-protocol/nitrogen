@@ -1,3 +1,5 @@
+const { verifyMessage } = require('../encrypt')
+
 const buildMessageChain = (proposal, message) => {
     for (i = 0; i < proposal.counterOffers.length; i++) {
         if (proposal.counterOffers[i].hash === message.body.previousHash) {
@@ -7,21 +9,15 @@ const buildMessageChain = (proposal, message) => {
     }
     if (proposal.hash === message.body.previousHash) {
         //create a shallow copy of proposal
-        return {
-            "body": {
-                "message": "proposal",
-                "requestId": proposal.body.requestId,
-                "makerId": proposal.body.makerId,
-                "takerId": proposal.body.takerId,
-                "offerAsset": proposal.body.offerAsset,
-                "offerAmount": proposal.body.offerAmount,
-                "requestAsset": proposal.body.requestAsset,
-                "requestAmount": proposal.body.requestAmount
-            },
-            "hash": proposal.hash,
-            "publicKey": proposal.publicKey,
-            "next": message
-        }
+        let shallowProposal = JSON.parse(JSON.stringify(proposal))
+        shallowProposal.next = message
+        shallowProposal.counterOffers = undefined
+        shallowProposal.acceptances = undefined
+        shallowProposal.fulfillments = undefined
+        shallowProposal.settlementInitiated = undefined
+        shallowProposal.signatureRequired = undefined
+
+        return shallowProposal
     }
 }
 
@@ -41,9 +37,34 @@ const buildAgreement = (proposal) => {
     return buildMessageChain(proposal, acceptance)
 }
 
-const validateAgreement = (agreement) => {
-    //TODO
-    return true
+const checkMessageSignature = async (message, report) => {
+    if (message && ! await verifyMessage(message)) {
+        report.signatureFailures.push(message.uuid)
+    }
+    return report
+}
+
+const validateAgreement = async (agreement) => {
+    let report = {
+        "signatureFailures": [],
+        "hashFailures": [],
+        "linkFailures": []
+    }
+
+    let message = agreement
+    while (message) {
+        report = checkMessageSignature(message, report)
+        if (!message.next) {
+            //acceptance message
+            report = checkMessageSignature(message.settlementInitiated, report)
+            report = checkMessageSignature(message.signatureRequired, report)
+            message.fulfillments.forEach(fulfillment => {
+               report = checkMessageSignature(fulfillment, report) 
+            });
+        }
+        message = message.next
+    }
+    return report
 }
 
 const pullValuesFromAgreement = (agreement) => {
