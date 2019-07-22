@@ -41,7 +41,6 @@ const checkMessageSignature = async (message, report) => {
     if (message && ! await verifyMessage(message)) {
         report.signatureFailures.push(message.uuid)
     }
-    return report
 }
 
 const validateAgreement = async (agreement) => {
@@ -53,13 +52,13 @@ const validateAgreement = async (agreement) => {
 
     let message = agreement
     while (message) {
-        report = checkMessageSignature(message, report)
+        await checkMessageSignature(message, report)
         if (!message.next) {
             //acceptance message
-            report = checkMessageSignature(message.settlementInitiated, report)
-            report = checkMessageSignature(message.signatureRequired, report)
+            await checkMessageSignature(message.settlementInitiated, report)
+            await checkMessageSignature(message.signatureRequired, report)
             message.fulfillments.forEach(fulfillment => {
-               report = checkMessageSignature(fulfillment, report) 
+                checkMessageSignature(fulfillment, report)
             });
         }
         message = message.next
