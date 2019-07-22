@@ -93,6 +93,11 @@ const presentOfferHistory = (param, proposals) => {
         console.log('The buyer issued disbursement')
         console.log('---------------------------------')
     }
+    if (proposal.disbursed) {
+        console.log('---------------------------------')
+        console.log('The seller issued disbursement')
+        console.log('---------------------------------')
+    }
 }
 
 const presentProposals = (proposals) => {

@@ -165,6 +165,26 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
     }
 }
 
+const consumerFinalDisburseHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let finalDisbursedMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (!finalDisbursedMessage) {
+            return
+        }
+        let proposal = proposals.get(finalDisbursedMessage.body.requestId)
+        if (!finalDisbursedMessage) {
+            return
+        }
+        if (!proposalResolvedWithAcceptance(proposal)) {
+            logger.warn("unable to locate proposal that resolved with acceptance for inbound disbursed")
+            return
+        }
+        proposal.disbursed = finalDisbursedMessage
+    } catch (e) {
+        logger.warn("unable to process inbound disbursed: " + e)
+    }
+}
+
 const consumerAdjudicationHandler = async (peerMessage, adjudications, keys) => {
     try {
         let adjudicationMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -212,4 +232,4 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler, consumerRulingHandler }
+module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler, consumerRulingHandler, consumerFinalDisburseHandler }
