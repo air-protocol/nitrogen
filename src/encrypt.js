@@ -36,4 +36,9 @@ const verifyMessage = async (message) => {
     }
 }
 
-module.exports = { createKeys, decryptMessage, encryptMessage, signMessage, verifyMessage }
+const verifyHash = (message) => {
+    let hashed = crypto.createHash('sha256').update(JSON.stringify(message.body)).digest()
+    return message.hash === hashed.toString('hex')
+}
+
+module.exports = { createKeys, decryptMessage, encryptMessage, signMessage, verifyMessage, verifyHash }

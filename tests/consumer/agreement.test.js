@@ -47,6 +47,16 @@ test('build agreement does', () => {
     expect(acceptance.body.requestAsset).toEqual('peanuts')
     expect(acceptance.body.requestAmount).toEqual(95)
 })
+test('validateAgreement reports clean', async () => {
+    //Assemble
+    let agreement = buildAgreement(proposals.get('cde1234'))
+
+    //Action
+    let report = await validateAgreement(agreement)
+
+    //Assert
+    expect(report.signatureFailures.length).toEqual(0)
+})
 
 test('validateAgreement checks message signatures', async () => {
     //Assemble
@@ -60,14 +70,16 @@ test('validateAgreement checks message signatures', async () => {
     expect(report.signatureFailures.length).toEqual(1)
     expect(report.signatureFailures[0]).toEqual(agreement.next.uuid)
 })
-/*
+
 test('validateAgreement checks message content with signature', async () => {
     //Assemble
-    const agreement = buildAgreement(proposals.get('cde1234'))
+    let agreement = buildAgreement(proposals.get('cde1234'))
     agreement.body.requestAmount = 1000
 
     //Action
     let report = await validateAgreement(agreement)
+
+    //Assert
     expect(report.signatureFailures.length).toEqual(1)
     expect(report.signatureFailures[0]).toEqual(agreement.uuid)
 })
@@ -76,10 +88,13 @@ test('validateAgreement checks message hashes', async () => {
     //Assemble
     const agreement = buildAgreement(proposals.get('cde1234'))
     agreement.hash = 'badhash'
+    agreement.next.next.hash = 'badhash'
 
     //Action
     let report = await validateAgreement(agreement)
-    expect(report.hashFailures.length).toEqual(1)
+
+    //Assert
+    expect(report.hashFailures.length).toEqual(2)
     expect(report.hashFailures[0]).toEqual(agreement.uuid)
+    expect(report.hashFailures[1]).toEqual(agreement.next.next.uuid)
 })
-*/

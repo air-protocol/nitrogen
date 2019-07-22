@@ -1,4 +1,4 @@
-const { verifyMessage } = require('../encrypt')
+const { verifyMessage, verifyHash } = require('../encrypt')
 
 const buildMessageChain = (proposal, message) => {
     for (i = 0; i < proposal.counterOffers.length; i++) {
@@ -22,24 +22,33 @@ const buildMessageChain = (proposal, message) => {
 }
 
 const buildAgreement = (proposal) => {
+    //We do not want to modify the original data model
+    let copyProposal = JSON.parse(JSON.stringify(proposal))
+
     let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
+    for (i = 0; i < copyProposal.acceptances.length; i++) {
+        if (copyProposal.acceptances[i].takerId === copyProposal.resolution.takerId) {
+            acceptance = copyProposal.acceptances[i]
         }
     }
     if (!acceptance) {
         throw new Error('Cannot build agreement.  No resolved acceptance.')
     }
-    acceptance.settlementInitiated = proposal.settlementInitiated
-    acceptance.signatureRequired = proposal.signatureRequired
-    acceptance.fulfillments = proposal.fulfillments
-    return buildMessageChain(proposal, acceptance)
+    acceptance.settlementInitiated = copyProposal.settlementInitiated
+    acceptance.signatureRequired = copyProposal.signatureRequired
+    acceptance.fulfillments = copyProposal.fulfillments
+    return buildMessageChain(copyProposal, acceptance)
 }
 
-const checkMessageSignature = async (message, report) => {
-    if (message && ! await verifyMessage(message)) {
+const checkMessage = async (message, report) => {
+    if(!message) {
+        return
+    }
+    if (! await verifyMessage(message)) {
         report.signatureFailures.push(message.uuid)
+    }
+    if (!verifyHash(message)) {
+        report.hashFailures.push(message.uuid)
     }
 }
 
@@ -52,13 +61,13 @@ const validateAgreement = async (agreement) => {
 
     let message = agreement
     while (message) {
-        await checkMessageSignature(message, report)
+        await checkMessage(message, report)
         if (!message.next) {
             //acceptance message
-            await checkMessageSignature(message.settlementInitiated, report)
-            await checkMessageSignature(message.signatureRequired, report)
-            message.fulfillments.forEach(fulfillment => {
-                checkMessageSignature(fulfillment, report)
+            await checkMessage(message.settlementInitiated, report)
+            await checkMessage(message.signatureRequired, report)
+            message.fulfillments.forEach(async (fulfillment) => {
+                await checkMessage(fulfillment, report)
             });
         }
         message = message.next
