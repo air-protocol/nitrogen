@@ -172,7 +172,8 @@ const consumerFinalDisburseHandler = async (peerMessage, proposals, keys) => {
             return
         }
         let proposal = proposals.get(finalDisbursedMessage.body.requestId)
-        if (!finalDisbursedMessage) {
+        if (!proposal) {
+            logger.warn("unable to locate proposal for inbound disbursed")
             return
         }
         if (!proposalResolvedWithAcceptance(proposal)) {
