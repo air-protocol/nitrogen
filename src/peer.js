@@ -17,6 +17,10 @@ const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 const clientio = require('socket.io-client')
 const logger = require('./logging')
+
+const timeStamp = new Date()
+timeStamp.toISOString()
+
 clientio.peers = []
 let connectRunning = false
 
@@ -25,7 +29,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
     let promise = new Promise((resolve, reject) => {
         let peerSocket = clientio.connect('http://' + peerAddress, { forcenew: true, reconnection: false, timeout: 5000 })
         peerSocket.on('connect', (socket) => {
-            logger.info('connected to ' + peerAddress)
+            logger.info('connected to ' + peerAddress + ` on ${timeStamp}`)
             peerSocket.emit('addMe', { address: thisAddress, addMeTTL: hostConfiguration.addMeTTL, uuid: addMeUUID })
             peerSocket.on('addMe', (message) => {
                 if (addMeHandler(message)) {

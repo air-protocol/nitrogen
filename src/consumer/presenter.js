@@ -31,6 +31,7 @@ const presentOfferHistory = (param, proposals) => {
     if (!proposal) {
         throw new Error('proposal not found')
     }
+    console.log(proposal)
     console.log('---------------------------------')
     console.log('Original Proposal')
     console.log('from public key: ' + proposal.publicKey.toString('hex'))
