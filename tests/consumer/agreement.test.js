@@ -47,6 +47,7 @@ test('build agreement does', () => {
     expect(acceptance.body.requestAsset).toEqual('peanuts')
     expect(acceptance.body.requestAmount).toEqual(95)
 })
+
 test('validateAgreement reports clean', async () => {
     //Assemble
     let agreement = buildAgreement(proposals.get('cde1234'))
@@ -99,7 +100,7 @@ test('validateAgreement checks message hashes', async () => {
     expect(report.hashFailures[1]).toEqual(agreement.next.next.uuid)
 })
 
-test('validateAgreement checks message links', async () => {
+test('validateAgreement checks negotiation message links', async () => {
     //Assemble
     const agreement = buildAgreement(proposals.get('cde1234'))
     agreement.next.next.body.previousHash = 'badhash'
@@ -110,4 +111,68 @@ test('validateAgreement checks message links', async () => {
     //Assert
     expect(report.linkFailures.length).toEqual(1)
     expect(report.linkFailures[0]).toEqual(agreement.next.next.uuid)
+})
+
+test('validateAgreement checks agreement message links', async () => {
+    //Assemble
+    let agreement = buildAgreement(proposals.get('cde1234'))
+
+    //skip ahead to acceptance message
+    let acceptance = agreement
+    while (acceptance.next) {
+        acceptance = acceptance.next
+    }
+
+    acceptance.signatureRequired.body.previousHash = 'badhash'
+    acceptance.settlementInitiated.body.previousHash = 'badhash'
+
+    //Action
+    let report = await validateAgreement(agreement)
+
+    //Assert
+    expect(report.linkFailures.length).toEqual(2)
+    expect(report.linkFailures[0]).toEqual(acceptance.settlementInitiated.uuid)
+    expect(report.linkFailures[1]).toEqual(acceptance.signatureRequired.uuid)
+})
+
+test('validateAgreement checks fulfillment message links', async () => {
+    //Assemble
+    let agreement = buildAgreement(proposals.get('cde1234'))
+
+    //skip ahead to acceptance message
+    let acceptance = agreement
+    while (acceptance.next) {
+        acceptance = acceptance.next
+    }
+
+    acceptance.fulfillments.forEach((fulfillment) => {
+        fulfillment.body.previousHash = 'badhash'
+    })
+
+    //Action
+    let report = await validateAgreement(agreement)
+
+    //Assert
+    expect(report.linkFailures.length).toEqual(2)
+    expect(report.linkFailures[0]).toEqual(acceptance.fulfillments[0].uuid)
+    expect(report.linkFailures[1]).toEqual(acceptance.fulfillments[1].uuid)
+})
+
+test('validateAgreement checks acceptance values for validity', async () => {
+    //Assemble
+    let agreement = buildAgreement(proposals.get('cde1234'))
+
+    //skip ahead to acceptance message
+    let acceptance = agreement
+    while (acceptance.next) {
+        acceptance = acceptance.next
+    }
+
+    acceptance.body.requestAmount = 1000
+
+    //Action
+    let report = await validateAgreement(agreement)
+
+    //Assert
+    expect(report.acceptanceValid).toEqual(false)
 })

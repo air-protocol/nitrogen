@@ -8,13 +8,18 @@ const buildMessageChain = (proposal, message) => {
         }
     }
     if (proposal.hash === message.body.previousHash) {
-        //create a shallow copy of proposal
         proposal.next = message
+
+        //disengage unrelated negotiations from final agreement
         proposal.counterOffers = undefined
         proposal.acceptances = undefined
+
+        //un-flatten the model
+        //settlement fields are attached to the acceptance in agreement
         proposal.fulfillments = undefined
         proposal.settlementInitiated = undefined
         proposal.signatureRequired = undefined
+
         return proposal
     }
 }
@@ -57,14 +62,25 @@ const validateAgreement = async (agreement) => {
     let report = {
         "signatureFailures": [],
         "hashFailures": [],
-        "linkFailures": []
+        "linkFailures": [],
+        "acceptanceValid": true
     }
 
     let message = agreement
+    let prior
     while (message) {
+        //check negotiation message
         await checkMessage(message, report)
         if (!message.next) {
             //reached acceptance message
+            report.acceptanceValid = (prior.body.requestAmount === message.body.requestAmount
+                && prior.body.requestAsset === message.body.requestAsset
+                && prior.body.offerAmount === message.body.offerAmount
+                && prior.body.offerAsset === message.body.offerAsset
+                && prior.body.requestId === message.body.requestId
+                && prior.publicKey !== message.publicKey)
+
+            //check all settlement messages that hang off of acceptance
             await checkMessage(message.settlementInitiated, report)
             if (message.settlementInitiated
                 && message.hash !== message.settlementInitiated.body.previousHash) {
@@ -77,13 +93,14 @@ const validateAgreement = async (agreement) => {
                 report.linkFailures.push(message.signatureRequired.uuid)
             }
 
-            message.fulfillments.forEach(async (fulfillment) => {
-                await checkMessage(fulfillment, report)
-                if (message.hash !== fulfillment.body.previousHash) {
-                    report.linkFailures.push(fulfillment.uuid)
+            for (i = 0; i < message.fulfillments.length; i++) {
+                await checkMessage(message.fulfillments[i], report)
+                if (message.hash !== message.fulfillments[i].body.previousHash) {
+                    report.linkFailures.push(message.fulfillments[i].uuid)
                 }
-            });
+            }
         }
+        prior = message
         message = message.next
     }
     return report
