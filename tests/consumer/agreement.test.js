@@ -98,3 +98,16 @@ test('validateAgreement checks message hashes', async () => {
     expect(report.hashFailures[0]).toEqual(agreement.uuid)
     expect(report.hashFailures[1]).toEqual(agreement.next.next.uuid)
 })
+
+test('validateAgreement checks message links', async () => {
+    //Assemble
+    const agreement = buildAgreement(proposals.get('cde1234'))
+    agreement.next.next.body.previousHash = 'badhash'
+
+    //Action
+    let report = await validateAgreement(agreement)
+
+    //Assert
+    expect(report.linkFailures.length).toEqual(1)
+    expect(report.linkFailures[0]).toEqual(agreement.next.next.uuid)
+})

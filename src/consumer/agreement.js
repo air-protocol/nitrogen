@@ -9,15 +9,13 @@ const buildMessageChain = (proposal, message) => {
     }
     if (proposal.hash === message.body.previousHash) {
         //create a shallow copy of proposal
-        let shallowProposal = JSON.parse(JSON.stringify(proposal))
-        shallowProposal.next = message
-        shallowProposal.counterOffers = undefined
-        shallowProposal.acceptances = undefined
-        shallowProposal.fulfillments = undefined
-        shallowProposal.settlementInitiated = undefined
-        shallowProposal.signatureRequired = undefined
-
-        return shallowProposal
+        proposal.next = message
+        proposal.counterOffers = undefined
+        proposal.acceptances = undefined
+        proposal.fulfillments = undefined
+        proposal.settlementInitiated = undefined
+        proposal.signatureRequired = undefined
+        return proposal
     }
 }
 
@@ -41,7 +39,7 @@ const buildAgreement = (proposal) => {
 }
 
 const checkMessage = async (message, report) => {
-    if(!message) {
+    if (!message) {
         return
     }
     if (! await verifyMessage(message)) {
@@ -49,6 +47,9 @@ const checkMessage = async (message, report) => {
     }
     if (!verifyHash(message)) {
         report.hashFailures.push(message.uuid)
+    }
+    if (message.next && (message.hash !== message.next.body.previousHash)) {
+        report.linkFailures.push(message.next.uuid)
     }
 }
 
@@ -63,11 +64,24 @@ const validateAgreement = async (agreement) => {
     while (message) {
         await checkMessage(message, report)
         if (!message.next) {
-            //acceptance message
+            //reached acceptance message
             await checkMessage(message.settlementInitiated, report)
+            if (message.settlementInitiated
+                && message.hash !== message.settlementInitiated.body.previousHash) {
+                report.linkFailures.push(message.settlementInitiated.uuid)
+            }
+
             await checkMessage(message.signatureRequired, report)
+            if (message.signatureRequired &&
+                message.signatureRequired.body.previousHash !== message.hash) {
+                report.linkFailures.push(message.signatureRequired.uuid)
+            }
+
             message.fulfillments.forEach(async (fulfillment) => {
                 await checkMessage(fulfillment, report)
+                if (message.hash !== fulfillment.body.previousHash) {
+                    report.linkFailures.push(fulfillment.uuid)
+                }
             });
         }
         message = message.next
