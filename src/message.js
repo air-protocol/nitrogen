@@ -3,6 +3,9 @@ const hostConfiguration = require('./config/config')
 const thisAddress = hostConfiguration.address + ':' + hostConfiguration.port
 const logger = require('./logging')
 
+const timeStamp = new Date()
+timeStamp.toISOString()
+ 
 let messageUUIDs = []
 
 const serverSocket = require('./server').serverSocket
@@ -20,7 +23,7 @@ const messageSeen = (messageUUID) => {
 
 const pingHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard ping: ' + peerMessage.body + ' uuid: ' + peerMessage.uuid)
+        logger.info('heard ping: ' + peerMessage.body + ' uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('testPing', peerMessage)
         return true
     }
@@ -29,7 +32,7 @@ const pingHandler = (peerMessage) => {
 
 const proposalHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard proposal uuid: ' + peerMessage.uuid)
+        logger.info('heard proposal uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('proposal', peerMessage)
         return true
     }
@@ -38,7 +41,7 @@ const proposalHandler = (peerMessage) => {
 
 const proposalResolvedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard proposal resolved: ' + peerMessage.uuid)
+        logger.info('heard proposal resolved: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('resolved', peerMessage)
         return true
     }
@@ -47,7 +50,7 @@ const proposalResolvedHandler = (peerMessage) => {
 
 const counterOfferHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard counterOffer uuid: ' + peerMessage.uuid)
+        logger.info('heard counterOffer uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('counterOffer', peerMessage)
         return true
     }
@@ -56,7 +59,7 @@ const counterOfferHandler = (peerMessage) => {
 
 const acceptHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard acceptance uuid: ' + peerMessage.uuid)
+        logger.info('heard acceptance uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('accept', peerMessage)
         return true
     }
@@ -65,7 +68,7 @@ const acceptHandler = (peerMessage) => {
 
 const fulfillmentHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard fulfillment uuid: ' + peerMessage.uuid)
+        logger.info('heard fulfillment uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('fulfillment', peerMessage)
         return true
     }
@@ -74,7 +77,7 @@ const fulfillmentHandler = (peerMessage) => {
 
 const settlementInitiatedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard settlementInitiated uuid: ' + peerMessage.uuid)
+        logger.info('heard settlementInitiated uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('settlementInitiated', peerMessage)
         return true
     }
@@ -83,7 +86,7 @@ const settlementInitiatedHandler = (peerMessage) => {
 
 const signatureRequiredHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard signatureRequired uuid: ' + peerMessage.uuid)
+        logger.info('heard signatureRequired uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('signatureRequired', peerMessage)
         return true
     }
@@ -92,7 +95,7 @@ const signatureRequiredHandler = (peerMessage) => {
 
 const disbursedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard disbursed uuid: ' + peerMessage.uuid)
+        logger.info('heard disbursed uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('disbursed', peerMessage)
         return true
     }
@@ -101,7 +104,7 @@ const disbursedHandler = (peerMessage) => {
 
 const adjudicationHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard adjudication uuid: ' + peerMessage.uuid)
+        logger.info('heard adjudication uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('adjudicate', peerMessage)
         return true
     }
@@ -110,7 +113,7 @@ const adjudicationHandler = (peerMessage) => {
 
 const rulingHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
-        logger.info('heard ruling uuid: ' + peerMessage.uuid)
+        logger.info('heard ruling uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
         serverSocket.emit('ruling', peerMessage)
         return true
     }
@@ -127,7 +130,7 @@ const addMeHandler = (peerMessage) => {
         serverSocket.emit('addMe', peerMessage)
         let directory = localCache.getKey('directory')
         if ((directory !== undefined) && (!directory.includes(peerMessage.address))) {
-            logger.info('adding ' + peerMessage.address)
+            logger.info('adding ' + peerMessage.address + ` on ${timeStamp}`)
             directory.push(peerMessage.address)
             localCache.setKey('directory', directory)
             localCache.save()

@@ -67,7 +67,8 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
 }
 
 const processAdjudication = async (param, proposals, adjudications, keys) => {
-    let { proposal, acceptance } = getResolvedAcceptance(param, proposals)
+    let adjudicate = JSON.parse(param)
+    let { proposal, acceptance } = getResolvedAcceptance(adjudicate.requestId, proposals)
     if (!proposal.settlementInitiated) {
         throw new Error('The settlement has not yet been initiated')
     }
@@ -79,6 +80,7 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         adjudicateBody.message = 'adjudicate'
         adjudicateBody.agreement = buildAgreement(proposal)
         adjudicateBody.previousHash = acceptance.hash
+        adjudicateBody.timeStamp = adjudicate.timeStamp
 
         let recipientKey
         let myKey = keys.publicKey.toString('hex')
