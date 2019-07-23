@@ -135,7 +135,7 @@ disburse { "requestId" : "cde1234", "timeStamp": "2019-07-23T15:28:56.782Z", "se
 
 ### Adjudicate
 ~~~
-adjudicate cde1234 
+adjudicate { "requestId" : "cde1234", "timeStamp": "2019-07-23T15:28:56.782Z" } 
 ~~~
 
 ### Ruling
