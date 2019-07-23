@@ -43,7 +43,7 @@ const buildAgreement = (proposal) => {
     return buildMessageChain(copyProposal, acceptance)
 }
 
-const checkMessage = async (message, report) => {
+const checkMessage = async (prior, message, report) => {
     if (!message) {
         return
     }
@@ -53,8 +53,8 @@ const checkMessage = async (message, report) => {
     if (!verifyHash(message)) {
         report.hashFailures.push(message.uuid)
     }
-    if (message.next && (message.hash !== message.next.body.previousHash)) {
-        report.linkFailures.push(message.next.uuid)
+    if (prior && prior.hash !== message.body.previousHash) {
+        report.linkFailures.push(message.uuid)
     }
 }
 
@@ -70,7 +70,7 @@ const validateAgreement = async (agreement) => {
     let prior
     while (message) {
         //check negotiation message
-        await checkMessage(message, report)
+        await checkMessage(prior, message, report)
         if (!message.next) {
             //reached acceptance message
             report.acceptanceValid = (prior.body.requestAmount === message.body.requestAmount
@@ -81,23 +81,10 @@ const validateAgreement = async (agreement) => {
                 && prior.publicKey !== message.publicKey)
 
             //check all settlement messages that hang off of acceptance
-            await checkMessage(message.settlementInitiated, report)
-            if (message.settlementInitiated
-                && message.hash !== message.settlementInitiated.body.previousHash) {
-                report.linkFailures.push(message.settlementInitiated.uuid)
-            }
-
-            await checkMessage(message.signatureRequired, report)
-            if (message.signatureRequired &&
-                message.signatureRequired.body.previousHash !== message.hash) {
-                report.linkFailures.push(message.signatureRequired.uuid)
-            }
-
+            await checkMessage(message, message.settlementInitiated, report)
+            await checkMessage(message, message.signatureRequired, report)
             for (i = 0; i < message.fulfillments.length; i++) {
-                await checkMessage(message.fulfillments[i], report)
-                if (message.hash !== message.fulfillments[i].body.previousHash) {
-                    report.linkFailures.push(message.fulfillments[i].uuid)
-                }
+                await checkMessage(message, message.fulfillments[i], report)
             }
         }
         prior = message
