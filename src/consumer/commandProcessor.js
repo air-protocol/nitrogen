@@ -1,7 +1,7 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement, pullValuesFromAgreement, validateAgreement } = require('./agreement')
-const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema } = require('../models/schemas')
+const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema } = require('../models/schemas')
 const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
 
@@ -67,7 +67,8 @@ const processNegotiationMessage = async (messageBody, proposal, keys, messageTyp
 }
 
 const processAdjudication = async (param, proposals, adjudications, keys) => {
-    let { proposal, acceptance } = getResolvedAcceptance(param, proposals)
+    let adjudicate = JSON.parse(param)
+    let { proposal, acceptance } = getResolvedAcceptance(adjudicate.requestId, proposals)
     if (!proposal.settlementInitiated) {
         throw new Error('The settlement has not yet been initiated')
     }
@@ -79,6 +80,7 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
         adjudicateBody.message = 'adjudicate'
         adjudicateBody.agreement = buildAgreement(proposal)
         adjudicateBody.previousHash = acceptance.hash
+        adjudicateBody.timeStamp = adjudicate.timeStamp
 
         let recipientKey
         let myKey = keys.publicKey.toString('hex')
@@ -160,6 +162,28 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
     proposal.signatureRequired = copyMessage
 }
 
+const sendFinalDisburseMessage = async (proposal, acceptance, keys, recipientKey) => {
+    let disbursedBody = {}
+    try {
+        disbursedBody.makerId = proposal.body.makerId
+        disbursedBody.takerId = acceptance.body.takerId
+        disbursedBody.requestId = proposal.body.requestId
+        disbursedBody.message = 'disbursed'
+        disbursedBody.previousHash = acceptance.hash
+
+        let message = buildMessage(disbursedBody, keys, disbursedSchema, recipientKey)
+        message = await signMessage(message, keys)
+
+        let copyMessage = JSON.parse(JSON.stringify(message))
+
+        message = await encryptMessage(message, recipientKey)
+        sendMessage('disbursed', message)
+        proposal.disbursed = copyMessage
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
+    }
+}
+
 const processDisburse = async (param, proposals, adjudications, rulings, keys) => {
 
     let disbursementBody = JSON.parse(param)
@@ -186,6 +210,7 @@ const processDisburse = async (param, proposals, adjudications, rulings, keys) =
             if (ruling.body.transaction) {
                 //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
                 submitDisburseTransaction(disbursementBody.secret, ruling.body.transaction)
+                sendFinalDisburseMessage(proposal, acceptance, keys, recipientKey)
             } else {
                 throw new Error('jury did not rule in your favor')
             }
@@ -202,6 +227,7 @@ const processDisburse = async (param, proposals, adjudications, rulings, keys) =
         //Seller is signing and collecting
         if (proposal.signatureRequired) {
             submitDisburseTransaction(disbursementBody.secret, proposal.signatureRequired.body.transaction)
+            sendFinalDisburseMessage(proposal, acceptance, keys, recipientKey)
         } else {
             throw new Error('The party purchasing with lumens must initiate disbursement')
         }

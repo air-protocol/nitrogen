@@ -20,7 +20,8 @@ const proposalSchema = {
         "offerAmount": { "type": "number" },
         "requestAmount": { "type": "number" },
         "requestAsset": { "type": "string" },
-        "requestId": { "type": "string" }
+        "requestId": { "type": "string" },
+        "timeStamp": {"type": "string"}
     }
 }
 
@@ -38,7 +39,8 @@ const negotiationSchema = {
         "requestAsset": { "type": "string" },
         "requestId": { "type": "string" },
         "message": { "type": "string" },
-        "previousHash": { "type": "object" }
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
     }
 }
 
@@ -48,7 +50,8 @@ const proposalResolvedSchema = {
         "takerId": { "type": "string" },
         "message": { "type": "string" },
         "requestId": { "type": "string" },
-        "previousHash": { "type": "object" }
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
     }
 }
 
@@ -59,7 +62,8 @@ const fulfillmentSchema = {
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "fulfillment": { "type": "object" },
-        "previousHash": { "type": "object" }
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
     }
 }
 
@@ -70,7 +74,8 @@ const settlementInitiatedSchema = {
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "escrow": { "type": "string" },
-        "previousHash": { "type": "object" }
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
     }
 }
 
@@ -81,7 +86,19 @@ const signatureRequiredSchema = {
         "message": { "type": "string" },
         "requestId": { "type": "string" },
         "transaction": { "type": "object" },
-        "previousHash": { "type": "object" }
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
+    }
+}
+
+const disbursedSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
     }
 }
 
@@ -94,8 +111,9 @@ const rulingSchema = {
         "favor": { "type": "string" },
         "justification": { "type": "string" },
         "transaction": { "type": "object" },
-        "previousHash": { "type": "object" }
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
     }
 }
 
-module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema }
+module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema }
