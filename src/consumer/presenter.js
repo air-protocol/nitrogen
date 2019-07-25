@@ -206,8 +206,7 @@ const presentCase = async (param, adjudications) => {
         } else {
             console.log(chalk.green(i + ') ' + adjudicationsForProposal[i].uuid + ' sender ' + adjudicationsForProposal[i].publicKey))
         }
-        console.log('')
-        console.log('----------------------------')
+        console.log('\n----------------------------')
     }
 }
 
