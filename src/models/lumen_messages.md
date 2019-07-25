@@ -138,6 +138,11 @@ disburse { "requestId" : "cde1234", "timeStamp": "2019-07-23T15:28:56.782Z", "se
 adjudicate { "requestId" : "cde1234", "timeStamp": "2019-07-23T15:28:56.782Z" } 
 ~~~
 
+## View Agreements on an adjudication
+~~~
+viewAgreement { "requestId" : "cde1234", "agreementIndex": 0}
+~~~
+
 ### Validate agreement on an adjudication
 ~~~
 validateAgreement {"requestId" : "abc1234", "agreementIndex" : 0}

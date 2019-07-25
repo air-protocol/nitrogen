@@ -1,4 +1,5 @@
 const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chain')
+const { processViewAgreement } = require('./commandProcessor')
 
 const presentOpenCases = (adjudications, rulings) => {
     console.log('Proposal request ids in dispute')
@@ -49,6 +50,37 @@ const presentCounterOffers = (param, proposals) => {
         console.log('request amount: ' + counterOffer.body.requestAmount)
         console.log('---------------------------------')
     })
+}
+
+const presentViewAgreement = async (param, adjudications) => {
+    const agreement = await processViewAgreement(param, adjudications)
+
+    let message = agreement
+    let fulfillment = message.fulfillments
+    let signaturedRequired = message.signatureRequired
+    while (message) {
+        //check negotiation message
+        console.log(message)
+        if (!message.next) {
+            //reached acceptance message
+
+            //check all settlement messages that hang off of acceptance
+            console.log('--------------------------')
+            console.log('Settlement Initiated: ' + JSON.stringify(message.settlementInitiated))
+            if (signaturedRequired) {
+                console.log('--------------------------')
+                console.log('Signatured Required: ' + JSON.stringify(signaturedRequired))
+                console.log('--------------------------')
+            }
+            if (fulfillment) {
+                for (i = 0; i < fulfillment.length; i++) {
+                    console.log('Fulfillments: ' + JSON.stringify(fulfillment[i]))
+                    console.log('--------------------------')
+                }
+            }
+        }
+        message = message.next
+    }
 }
 
 const presentOfferHistory = (param, proposals) => {
@@ -186,4 +218,4 @@ const presentPendingTransaction = async (param, proposals) => {
     })
 }
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport }
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentViewAgreement }
