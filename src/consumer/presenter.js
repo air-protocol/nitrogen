@@ -53,57 +53,74 @@ const presentCounterOffers = (param, proposals) => {
     })
 }
 
+const presentViewAgreement = async (agreement) => {
+    let message = agreement
+    console.log('Original Proposal')
+    while (message) {
+        printNegotiationMessage(message)
+        if (!message.next) {
+            let acceptance = message
+            acceptance.fulfillments.forEach((fulfillment) => {
+                printFulfullment(fulfillment)
+            })
+            console.log('---------------------------------')
+            console.log('Escrow information')
+            await printEscrow(acceptance.settlementInitiated.body.escrow)
+            console.log('---------------------------------')
+
+            if (acceptance.signatureRequired) {
+                console.log('---------------------------------')
+                console.log('Pending Operations from Buyer disburse')
+                printTransactionOperations(acceptance.signatureRequired.body.transaction)
+                console.log('---------------------------------')
+            }
+        }
+        message = message.next
+    }
+}
+
+const printNegotiationMessage = (message) => {
+    console.log('---------------------------------')
+    if (message.body.message) {
+        console.log('message type: ' + message.body.message)
+    }
+    console.log('from public key: ' + message.publicKey.toString('hex'))
+    console.log('request: ' + message.body.requestId)
+    console.log('maker id: ' + message.body.makerId)
+    console.log('offer asset: ' + message.body.offerAsset)
+    console.log('offer amount: ' + message.body.offerAmount)
+    console.log('request asset: ' + message.body.requestAsset)
+    console.log('request amount: ' + message.body.requestAmount)
+    console.log('---------------------------------')
+}
+
+const printFulfullment = (fulfillment) => {
+    console.log('---------------------------------')
+    console.log('Fulfillment')
+    console.log('from public key: ' + fulfillment.publicKey.toString('hex'))
+    console.log('request: ' + fulfillment.body.requestId)
+    console.log('maker id: ' + fulfillment.body.makerId)
+    console.log('taker id: ' + fulfillment.body.takerId)
+    console.log('message: ' + fulfillment.body.message)
+    console.log('fulfullment: ' + JSON.stringify(fulfillment.body.fulfillment))
+    console.log('---------------------------------')
+}
+
 const presentOfferHistory = (param, proposals) => {
     let proposal = proposals.get(param)
     if (!proposal) {
         throw new Error('proposal not found')
     }
-    console.log('---------------------------------')
     console.log('Original Proposal')
-    console.log('from public key: ' + proposal.publicKey.toString('hex'))
-    console.log('request: ' + proposal.body.requestId)
-    console.log('maker id: ' + proposal.body.makerId)
-    console.log('offer asset: ' + proposal.body.offerAsset)
-    console.log('offer amount: ' + proposal.body.offerAmount)
-    console.log('request asset: ' + proposal.body.requestAsset)
-    console.log('request amount: ' + proposal.body.requestAmount)
-    console.log('---------------------------------')
+    printNegotiationMessage(proposal)
     proposal.counterOffers.forEach((counterOffer) => {
-        console.log('---------------------------------')
-        console.log('Counter Offer')
-        console.log('from public key: ' + counterOffer.publicKey.toString('hex'))
-        console.log('request: ' + counterOffer.body.requestId)
-        console.log('maker id: ' + counterOffer.body.makerId)
-        console.log('taker id: ' + counterOffer.body.takerId)
-        console.log('offer asset: ' + counterOffer.body.offerAsset)
-        console.log('offer amount: ' + counterOffer.body.offerAmount)
-        console.log('request asset: ' + counterOffer.body.requestAsset)
-        console.log('request amount: ' + counterOffer.body.requestAmount)
-        console.log('---------------------------------')
+        printNegotiationMessage(counterOffer)
     })
     proposal.acceptances.forEach((acceptance) => {
-        console.log('---------------------------------')
-        console.log('Acceptance')
-        console.log('from public key: ' + acceptance.publicKey.toString('hex'))
-        console.log('request: ' + acceptance.body.requestId)
-        console.log('maker id: ' + acceptance.body.makerId)
-        console.log('taker id: ' + acceptance.body.takerId)
-        console.log('offer asset: ' + acceptance.body.offerAsset)
-        console.log('offer amount: ' + acceptance.body.offerAmount)
-        console.log('request asset: ' + acceptance.body.requestAsset)
-        console.log('request amount: ' + acceptance.body.requestAmount)
-        console.log('---------------------------------')
+        printNegotiationMessage(acceptance)
     })
     proposal.fulfillments.forEach((fulfillment) => {
-        console.log('---------------------------------')
-        console.log('Fulfillment')
-        console.log('from public key: ' + fulfillment.publicKey.toString('hex'))
-        console.log('request: ' + fulfillment.body.requestId)
-        console.log('maker id: ' + fulfillment.body.makerId)
-        console.log('taker id: ' + fulfillment.body.takerId)
-        console.log('message: ' + fulfillment.body.message)
-        console.log('fulfullment: ' + JSON.stringify(fulfillment.body.fulfillment))
-        console.log('---------------------------------')
+        printFulfullment(fulfillment)
     })
     if (proposal.resolution) {
         console.log('---------------------------------')
@@ -154,14 +171,9 @@ const presentTransactionHistory = async (accountId) => {
     })
 }
 
-const presentViewEscrow = async (param, proposals) => {
-    const proposal = proposals.get(param)
-    if (!proposal.settlementInitiated) {
-        throw new Error('The settlement has not been initiated yet. No escrow account to view')
-    }
-    const escrowId = proposal.settlementInitiated.body.escrow
+const printEscrow = async (escrowId) => {
     const accountResult = await viewEscrow(escrowId)
-    console.log('\nAccount Id: ' + accountResult.account_id)
+    console.log('Account Id: ' + accountResult.account_id)
     console.log('Sequence: ' + accountResult.sequence)
     console.log('Balance: ' + JSON.stringify(accountResult.balances[0]))
     for (i = 0; i < accountResult.signers.length; i++) {
@@ -169,12 +181,17 @@ const presentViewEscrow = async (param, proposals) => {
     }
 }
 
-const presentPendingTransaction = async (param, proposals) => {
+const presentViewEscrow = async (param, proposals) => {
     const proposal = proposals.get(param)
-    if (!proposal.signatureRequired) {
-        throw new Error('The buyer has not yet disbursed. No contract to view.')
+    if (!proposal.settlementInitiated) {
+        throw new Error('The settlement has not been initiated yet. No escrow account to view')
     }
-    const pendingOperations = await viewTransactionOperations(proposal.signatureRequired.body.transaction)
+    const escrowId = proposal.settlementInitiated.body.escrow
+    printEscrow(escrowId)
+}
+
+const printTransactionOperations = async (transaction) => {
+    const pendingOperations = await viewTransactionOperations(transaction)
     console.log('Pending Operations')
     pendingOperations.forEach((operation) => {
         console.log('type: ' + operation.type)
@@ -186,6 +203,14 @@ const presentPendingTransaction = async (param, proposals) => {
         }
         console.log('----------------------------')
     })
+}
+
+const presentPendingTransaction = async (param, proposals) => {
+    const proposal = proposals.get(param)
+    if (!proposal.signatureRequired) {
+        throw new Error('The buyer has not yet disbursed. No contract to view.')
+    }
+    printTransactionOperations(proposal.signatureRequired.body.transaction)
 }
 
 const presentCase = async (param, adjudications) => {
@@ -210,4 +235,4 @@ const presentCase = async (param, adjudications) => {
     }
 }
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentCase }
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentCase, presentViewAgreement }

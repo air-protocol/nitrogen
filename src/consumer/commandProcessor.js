@@ -341,6 +341,16 @@ const processValidateAgreement = async (param, adjudications) => {
     return report
 }
 
+const processViewAgreement = async (param, adjudications) => {
+    const agreementParams = JSON.parse(param)
+    const adjudication = adjudications.get(agreementParams.requestId)
+    if(!adjudication) {
+        throw new Error("There is no adjudication with that requestId and agreementIndex")
+    }
+    const agreement = adjudication[agreementParams.agreementIndex].body.agreement
+    return agreement
+}
+
 const processRuling = async (param, adjudications, rulings, keys) => {
     let ruling = JSON.parse(param)
     let proposalAdjudications = adjudications.get(ruling.requestId)
@@ -401,4 +411,4 @@ const processRuling = async (param, adjudications, rulings, keys) => {
     rulings.set(requestId, copyMessage)
 }
 
-module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling, processValidateAgreement }
+module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling, processValidateAgreement, processViewAgreement }
