@@ -1,5 +1,4 @@
 const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chain')
-const { processViewAgreement } = require('./commandProcessor')
 const { validateAgreement } = require('./agreement')
 const chalk = require('chalk')
 
@@ -54,9 +53,7 @@ const presentCounterOffers = (param, proposals) => {
     })
 }
 
-const presentViewAgreement = async (param, adjudications) => {
-    const agreement = await processViewAgreement(param, adjudications)
-
+const presentViewAgreement = async (agreement) => {
     let message = agreement
     console.log('Original Proposal')
     while (message) {
@@ -238,4 +235,4 @@ const presentCase = async (param, adjudications) => {
     }
 }
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentCase }
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentCase, presentViewAgreement }
