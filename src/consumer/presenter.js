@@ -1,5 +1,7 @@
 const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chain')
 const { processViewAgreement } = require('./commandProcessor')
+const { validateAgreement } = require('./agreement')
+const chalk = require('chalk')
 
 const presentOpenCases = (adjudications, rulings) => {
     console.log('Proposal request ids in dispute')
@@ -214,4 +216,26 @@ const presentPendingTransaction = async (param, proposals) => {
     printTransactionOperations(proposal.signatureRequired.body.transaction)
 }
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentViewAgreement }
+const presentCase = async (param, adjudications) => {
+    const adjudicationsForProposal = adjudications.get(param)
+    if (!adjudicationsForProposal) {
+        throw new Error('There are no adjudication messages for that request id')
+    }
+    console.log('Adjudications for case: ' + param)
+    console.log('----------------------------')
+    let report
+    for (let i = 0; i < adjudicationsForProposal.length; i++) {
+        report = await validateAgreement(adjudicationsForProposal[i].body.agreement)
+        if (report.signatureFailures.length
+            || report.hashFailures.length
+            || report.linkFailures.length
+            || (!report.acceptanceValid)) {
+            console.log(chalk.red(i + ') ' + adjudicationsForProposal[i].uuid + ' sender ' + adjudicationsForProposal[i].publicKey))
+        } else {
+            console.log(chalk.green(i + ') ' + adjudicationsForProposal[i].uuid + ' sender ' + adjudicationsForProposal[i].publicKey))
+        }
+        console.log('\n----------------------------')
+    }
+}
+
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport, presentCase }
