@@ -2,7 +2,9 @@ jest.mock('../../src/consumer/chain')
 jest.mock('../../src/config/config')
 jest.mock('../../src/encrypt')
 jest.mock('../../src/consumer/consumerPeer')
+jest.mock('../../src/consumer/agreement')
 
+const agreement = require('../../src/consumer/agreement')
 const chain = require('../../src/consumer/chain')
 const config = require('../../src/config/config')
 const encrypt = require('../../src/encrypt')
@@ -11,7 +13,7 @@ const consumerPeer = require('../../src/consumer/consumerPeer')
 consumerPeer.buildMessage.mockReturnValue({})
 encrypt.encryptMessage.mockReturnValue({})
 encrypt.signMessage.mockReturnValue({})
-chain.initiateSettlement.mockReturnValue({publicKey: () => 'escrowPublicKey'})
+chain.initiateSettlement.mockReturnValue({ publicKey: () => 'escrowPublicKey' })
 
 config.juryKey = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
 
@@ -28,9 +30,10 @@ const keys = { publicKey, privateKey }
 
 afterEach(() => {
     chain.initiateSettlement.mockClear()
+    agreement.validateAgreement.mockClear()
 })
 
-const { processSettleProposal } = require('../../src/consumer/commandProcessor')
+const { processSettleProposal, processValidateAgreement } = require('../../src/consumer/commandProcessor')
 
 test('processSettleProposal calls initiateSettlement on chain when proposal is resolved (taker as buyer)', async () => {
     //Assemble
@@ -207,4 +210,54 @@ test('processSettleProposal doest not call initiateSettlement when proposal is r
 
     //Assert
     expect(chain.initiateSettlement).not.toBeCalled()
-}) 
+})
+
+test('processValidateAgreement does', async () => {
+    //Assemble
+    const param = '{"requestId": "abc1234", "agreementIndex": 0}'
+    let mockAgreement = {}
+    let mockAdjudication = { agreement: mockAgreement }
+    let mockAdjudications = new Map()
+    mockAdjudications.set('abc1234', [mockAdjudication])
+
+    //Action
+    await processValidateAgreement(param, mockAdjudications)
+
+    //Assert
+    expect(agreement.validateAgreement).toBeCalled()
+    expect(agreement.validateAgreement.mock.calls[0][0]).toEqual(mockAgreement)
+})
+
+test('processValidateAGreement handles bad agreement index', async () => {
+    //Assemble
+    const param = '{"requestId": "abc1234", "agreementIndex": 1}'
+    let mockAgreement = {}
+    let mockAdjudication = { agreement: mockAgreement }
+    let mockAdjudications = new Map()
+    mockAdjudications.set('abc1234', [mockAdjudication])
+
+    //Action
+    try {
+        await processValidateAgreement(param, mockAdjudications)
+    } catch (e) {
+   //Assert
+        expect(e.message).toMatch('No agreement associated with that index')
+    }
+})
+
+test('processValidateAGreement handles bad proposal ids', async () => {
+    //Assemble
+    const param = '{"requestId": "def1234", "agreementIndex": 0}'
+    let mockAgreement = {}
+    let mockAdjudication = { agreement: mockAgreement }
+    let mockAdjudications = new Map()
+    mockAdjudications.set('abc1234', [mockAdjudication])
+
+    //Action
+    try {
+        await processValidateAgreement(param, mockAdjudications)
+    } catch (e) {
+   //Assert
+        expect(e.message).toMatch('No agreement associated with that index')
+    }
+})

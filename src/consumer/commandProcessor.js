@@ -1,6 +1,6 @@
 const { encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
-const { buildAgreement, pullValuesFromAgreement } = require('./agreement')
+const { buildAgreement, pullValuesFromAgreement, validateAgreement } = require('./agreement')
 const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema } = require('../models/schemas')
 const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chain')
 const hostConfiguration = require('../config/config')
@@ -331,6 +331,16 @@ const processCounterOffer = async (param, proposals, keys) => {
     proposal.counterOffers.push(counterOfferMessage)
 }
 
+const processValidateAgreement = async (param, adjudications) => {
+    const agreementParams = JSON.parse(param)
+    const adjudicationsForProposal = adjudications.get(agreementParams.requestId)
+    if (!(adjudicationsForProposal && ((adjudicationsForProposal.length - 1) >= agreementParams.agreementIndex))) {
+        throw new Error('No agreement associated with that index')
+    }
+    const report = await validateAgreement(adjudicationsForProposal[agreementParams.agreementIndex].agreement)
+    return report
+}
+
 const processRuling = async (param, adjudications, rulings, keys) => {
     let ruling = JSON.parse(param)
     let proposalAdjudications = adjudications.get(ruling.requestId)
@@ -391,4 +401,4 @@ const processRuling = async (param, adjudications, rulings, keys) => {
     rulings.set(requestId, copyMessage)
 }
 
-module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling }
+module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling, processValidateAgreement }

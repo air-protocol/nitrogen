@@ -9,6 +9,31 @@ const presentOpenCases = (adjudications, rulings) => {
     });
 }
 
+const presentAgreementReport = (report) => {
+    console.log('Agreement Report')
+    console.log('---------------------------------')
+    console.log('There are ' + report.signatureFailures.length + ' messages with signature failures')
+    console.log('---------------------------------')
+    report.signatureFailures.forEach((uuid) => {
+        console.log(uuid)
+    })
+    console.log('---------------------------------')
+    console.log('There are ' + report.hashFailures.length + ' messages with hash failures')
+    console.log('---------------------------------')
+    report.hashFailures.forEach((uuid) => {
+        console.log(uuid)
+    })
+    console.log('---------------------------------')
+    console.log('There are ' + report.linkFailures.length + ' messages with link failures')
+    console.log('---------------------------------')
+    report.linkFailures.forEach((uuid) => {
+        console.log(uuid)
+    })
+    console.log('Acceptance Validity')
+    console.log('---------------------------------')
+    console.log('The acceptance on the agreemet is ' + (report.acceptanceValid ? 'valid' : 'invalid'))
+}
+
 const presentCounterOffers = (param, proposals) => {
     let counteredProposal = proposals.get(param)
     if (!counteredProposal) {
@@ -161,4 +186,4 @@ const presentPendingTransaction = async (param, proposals) => {
     })
 }
 
-module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction }
+module.exports = { presentOpenCases, presentCounterOffers, presentOfferHistory, presentProposals, presentTransactionHistory, presentViewEscrow, presentPendingTransaction, presentAgreementReport }

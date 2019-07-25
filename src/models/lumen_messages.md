@@ -138,6 +138,11 @@ disburse { "requestId" : "cde1234", "timeStamp": "2019-07-23T15:28:56.782Z", "se
 adjudicate { "requestId" : "cde1234", "timeStamp": "2019-07-23T15:28:56.782Z" } 
 ~~~
 
+### Validate agreement on an adjudication
+~~~
+validateAgreement {"requestId" : "abc1234", "agreementIndex" : 0}
+~~~
+
 ### Ruling
 ~~~
 ruling { "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", adjudicationIndex" : 0, "favor" : "buyer", "justification" : "for the fact" }
