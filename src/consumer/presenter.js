@@ -42,14 +42,7 @@ const presentCounterOffers = (param, proposals) => {
         throw new Error('proposal not found')
     }
     counteredProposal.counterOffers.forEach((counterOffer) => {
-        console.log('---------------------------------')
-        console.log('request: ' + counterOffer.body.requestId)
-        console.log('taker id: ' + counterOffer.body.takerId)
-        console.log('offer asset: ' + counterOffer.body.offerAsset)
-        console.log('offer amount: ' + counterOffer.body.offerAmount)
-        console.log('request asset: ' + counterOffer.body.requestAsset)
-        console.log('request amount: ' + counterOffer.body.requestAmount)
-        console.log('---------------------------------')
+        printNegotiationMessage(counterOffer)
     })
 }
 
@@ -87,6 +80,7 @@ const printNegotiationMessage = (message) => {
     console.log('from public key: ' + message.publicKey.toString('hex'))
     console.log('request: ' + message.body.requestId)
     console.log('maker id: ' + message.body.makerId)
+    console.log('taker id: ' + message.body.takerId)
     console.log('offer asset: ' + message.body.offerAsset)
     console.log('offer amount: ' + message.body.offerAmount)
     console.log('request asset: ' + message.body.requestAsset)
