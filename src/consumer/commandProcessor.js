@@ -20,7 +20,7 @@ const getKeyFromPreviousHash = (previousHash, proposal) => {
     return recipientKey
 }
 
-const processProposal = async (param, proposals, adjudications, keys) => {
+const processProposal = async (param, proposals, keys) => {
     let proposalBody = JSON.parse(param)
     if (proposals.get(proposalBody.requestId)) {
         throw new Error('A proposal with that requestId already exists.')
