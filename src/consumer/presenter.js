@@ -227,9 +227,13 @@ const presentCase = async (param, adjudications) => {
             || report.hashFailures.length
             || report.linkFailures.length
             || (!report.acceptanceValid)) {
-            console.log(chalk.red(i + ') ' + adjudicationsForProposal[i].uuid + ' sender ' + adjudicationsForProposal[i].publicKey))
+            console.log(chalk.red(i + ') uuid: ' + adjudicationsForProposal[i].uuid))
+            console.log(chalk.red('timestamp: ' + adjudicationsForProposal[i].body.timeStamp))
+            console.log(chalk.red('sender: ' + adjudicationsForProposal[i].publicKey))
         } else {
-            console.log(chalk.green(i + ') ' + adjudicationsForProposal[i].uuid + ' sender ' + adjudicationsForProposal[i].publicKey))
+            console.log(chalk.green(i + ') uuid: ' + adjudicationsForProposal[i].uuid))
+            console.log(chalk.green('timestamp: ' + adjudicationsForProposal[i].body.timeStamp))
+            console.log(chalk.green('sender: ' + adjudicationsForProposal[i].publicKey))
         }
         console.log('\n----------------------------')
     }
