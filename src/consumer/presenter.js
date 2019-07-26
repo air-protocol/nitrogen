@@ -44,6 +44,7 @@ const presentCounterOffers = (param, proposals) => {
     counteredProposal.counterOffers.forEach((counterOffer) => {
         console.log('---------------------------------')
         console.log('request: ' + counterOffer.body.requestId)
+        console.log('maker id: ' + message.body.makerId)
         console.log('taker id: ' + counterOffer.body.takerId)
         console.log('offer asset: ' + counterOffer.body.offerAsset)
         console.log('offer amount: ' + counterOffer.body.offerAmount)
@@ -87,6 +88,7 @@ const printNegotiationMessage = (message) => {
     console.log('from public key: ' + message.publicKey.toString('hex'))
     console.log('request: ' + message.body.requestId)
     console.log('maker id: ' + message.body.makerId)
+    console.log('taker id: ' + counterOffer.body.takerId)
     console.log('offer asset: ' + message.body.offerAsset)
     console.log('offer amount: ' + message.body.offerAmount)
     console.log('request asset: ' + message.body.requestAsset)
