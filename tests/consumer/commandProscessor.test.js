@@ -9,10 +9,10 @@ const chain = require('../../src/consumer/chain')
 const config = require('../../src/config/config')
 const encrypt = require('../../src/encrypt')
 const consumerPeer = require('../../src/consumer/consumerPeer')
+const { processSettleProposal,
+    processValidateAgreement,
+    processProposal } = require('../../src/consumer/commandProcessor')
 
-consumerPeer.buildMessage.mockReturnValue({})
-encrypt.encryptMessage.mockReturnValue({})
-encrypt.signMessage.mockReturnValue({})
 chain.initiateSettlement.mockReturnValue({ publicKey: () => 'escrowPublicKey' })
 
 config.juryKey = 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME'
@@ -31,9 +31,15 @@ const keys = { publicKey, privateKey }
 afterEach(() => {
     chain.initiateSettlement.mockClear()
     agreement.validateAgreement.mockClear()
+    consumerPeer.sendMessage.mockClear()
 })
 
-const { processSettleProposal, processValidateAgreement } = require('../../src/consumer/commandProcessor')
+beforeEach(() =>{
+    consumerPeer.buildMessage.mockReturnValue({})
+    encrypt.encryptMessage.mockReturnValue({})
+    encrypt.signMessage.mockReturnValue({})
+})
+
 
 test('processSettleProposal calls initiateSettlement on chain when proposal is resolved (taker as buyer)', async () => {
     //Assemble
@@ -240,7 +246,7 @@ test('processValidateAGreement handles bad agreement index', async () => {
     try {
         await processValidateAgreement(param, mockAdjudications)
     } catch (e) {
-   //Assert
+        //Assert
         expect(e.message).toMatch('No agreement associated with that index')
     }
 })
@@ -257,7 +263,26 @@ test('processValidateAGreement handles bad proposal ids', async () => {
     try {
         await processValidateAgreement(param, mockAdjudications)
     } catch (e) {
-   //Assert
+        //Assert
         expect(e.message).toMatch('No agreement associated with that index')
     }
+})
+
+test('ProcessProposal does', async () => {
+    //Assemble
+    const param = '{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 100, "timeStamp": "2019-07-23T15:28:56.782Z", "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : []}'
+    let proposals = new Map()
+    let adjudications
+    const mockProposalMessage = { "body": { "requestId": "abc1234" } }
+    consumerPeer.buildMessage.mockReturnValue(mockProposalMessage)
+    const mockSignedMessage = { "body": { "requestId": "abc1234" } }
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
+
+    //Action
+    await processProposal(param, proposals, adjudications, keys)
+
+    //Assert
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('proposal')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(mockSignedMessage)
 })
