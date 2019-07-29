@@ -3,22 +3,8 @@ const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement, pullValuesFromAgreement, validateAgreement } = require('./agreement')
 const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema } = require('../models/schemas')
 const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chain')
+const { getKeyFromPreviousHash, getResolvedAcceptance } = require('./proposalHelper')
 const hostConfiguration = require('../config/config')
-
-const getKeyFromPreviousHash = (previousHash, proposal) => {
-    let recipientKey = undefined
-    if (previousHash === proposal.hash) {
-        recipientKey = proposal.publicKey
-    } else {
-        for (i = 0; i < proposal.counterOffers.length; i++) {
-            if (previousHash === proposal.counterOffers[i].hash) {
-                recipientKey = proposal.counterOffers[i].publicKey
-                break
-            }
-        }
-    }
-    return recipientKey
-}
 
 const processProposal = async (param, proposals, keys) => {
     let proposalBody = JSON.parse(param)
@@ -114,26 +100,6 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
     } catch (e) {
         throw new Error('unable to sign and encrypt: ' + e)
     }
-}
-
-const getResolvedAcceptance = (requestId, proposals) => {
-    let proposal = proposals.get(requestId)
-    if (!proposal) {
-        throw new Error('Unable to locate proposal')
-    }
-    if (!proposal.resolution) {
-        throw new Error('Proposal is not resolved')
-    }
-    let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
-        }
-    }
-    if (!acceptance) {
-        throw new Error('Proposal did not resolve an acceptance')
-    }
-    return { proposal, acceptance }
 }
 
 const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, amount, acceptance, proposal, keys) => {
@@ -344,7 +310,7 @@ const processValidateAgreement = async (param, adjudications) => {
 const processViewAgreement = async (param, adjudications) => {
     const agreementParams = JSON.parse(param)
     const adjudication = adjudications.get(agreementParams.requestId)
-    if(!adjudication) {
+    if (!adjudication) {
         throw new Error("There is no adjudication with that requestId and agreementIndex")
     }
     const agreement = adjudication[agreementParams.agreementIndex].body.agreement
