@@ -14,7 +14,8 @@ const proposalHelper = require('../../src/consumer/proposalHelper')
 
 const { processSettleProposal,
     processValidateAgreement,
-    processProposal } = require('../../src/consumer/commandProcessor')
+    processProposal,
+    processDisburse } = require('../../src/consumer/commandProcessor')
 
 chain.initiateSettlement.mockReturnValue({ publicKey: () => 'escrowPublicKey' })
 
@@ -32,7 +33,6 @@ const publicKey = new Buffer('public')
 const privateKey = new Buffer('private')
 const keys = { publicKey, privateKey }
 
-
 afterEach(() => {
 })
 
@@ -40,6 +40,10 @@ beforeEach(() => {
     chain.initiateSettlement.mockClear()
     agreement.validateAgreement.mockClear()
     consumerPeer.sendMessage.mockClear()
+    consumerPeer.buildMessage.mockClear()
+    encrypt.encryptMessage.mockClear()
+    encrypt.signMessage.mockClear()
+
     proposalHelper.getResolvedAcceptance.mockRestore()
 
     consumerPeer.buildMessage.mockReturnValue({})
@@ -83,7 +87,7 @@ test('processSettleProposal calls initiateSettlement on chain when proposal is r
         "publicKey": keys.publicKey
     }
 
-    const mockProposals = {}
+    const mockProposals = new Map()
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
 
@@ -132,13 +136,13 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
         "publicKey": keys.publicKey
     }
 
-    const mockProposals = {}
+    const mockProposals = new Map()
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
 
     //Action
     try {
-    await processSettleProposal(settlementJson, mockProposals, keys)
+        await processSettleProposal(settlementJson, mockProposals, keys)
     } catch (e) {
         //noop
     }
@@ -180,7 +184,7 @@ test('processSettleProposal throws an error when caller is not the buyer (taker 
         "publicKey": keys.publicKey
     }
 
-    const mockProposals = {}
+    const mockProposals = new Map()
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
 
@@ -228,7 +232,7 @@ test('processSettleProposal calls initiateSettlement on chain when proposal is r
         "publicKey": keys.publicKey
     }
 
-    const mockProposals = {}
+    const mockProposals = new Map()
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
 
@@ -253,7 +257,7 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
     const challengeStake = 100
     const offerAmount = 200
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
-    
+
     config.consumerId = sellerPublic
 
     const proposal = {
@@ -281,7 +285,7 @@ test('processSettleProposal does not call initiateSettlement on chain when calle
 
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
-    const mockProposals = {}
+    const mockProposals = new Map()
 
     //Action
     try {
@@ -302,7 +306,7 @@ test('processSettleProposal throws an error when caller is not the buyer (maker 
     const challengeStake = 100
     const offerAmount = 200
     const settlementJson = '{ "requestId" : "abc1234", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
-    
+
     config.consumerId = sellerPublic
 
     const proposal = {
@@ -330,7 +334,7 @@ test('processSettleProposal throws an error when caller is not the buyer (maker 
 
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
-    const mockProposals = {}
+    const mockProposals = new Map()
 
     //Action
     try {
@@ -349,7 +353,7 @@ test('processSettleProposal doest not call initiateSettlement when proposal is m
     proposalHelper.getResolvedAcceptance.mockImplementation((requestId, proposals) => {
         throw new Error('Unable to locate proposal')
     })
-    const mockProposals = {}
+    const mockProposals = new Map()
 
     //Action
     try {
@@ -369,7 +373,7 @@ test('processSettleProposal does not call initiateSettlement when proposal is no
     proposalHelper.getResolvedAcceptance.mockImplementation((requestId, proposals) => {
         throw new Error('Proposal in not resolved')
     })
-    const mockProposals = {}
+    const mockProposals = new Map()
 
     //Action
     try {
@@ -389,7 +393,7 @@ test('processSettleProposal doest not call initiateSettlement when proposal is r
     proposalHelper.getResolvedAcceptance.mockImplementation((requestId, proposals) => {
         throw new Error('Proposal did not resolve an acceptance')
     })
-    const mockProposals = {}
+    const mockProposals = new Map()
 
     //Action
     try {
@@ -469,4 +473,85 @@ test('ProcessProposal does', async () => {
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('proposal')
     expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(mockSignedMessage)
+})
+
+test('processDisburse sends signature required to seller when the maker is buyer', async () => {
+    //Assemble
+    const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    config.consumerId = buyerPublic
+    const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
+    const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const makerMeshKey = 'maker_mesh_key'
+    const takerMeshKey = 'taker_mesh_key'
+    const challengeStake = 100
+    const offerAmount = 200
+    const buyerDisburseJson = '{ "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "secret" : "SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH"}'
+
+    const proposal = {
+        "body": {
+            "requestId":
+                "abc1234",
+            "offerAsset":
+                "native",
+            "makerId": buyerPublic,
+        },
+        "settlementInitiated": { "body": { "escrow": "some_account" } }
+    }
+
+    const acceptance = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "native",
+            "makerId": buyerPublic,
+            "takerId": sellerPublic,
+            "challengeStake": challengeStake,
+            "offerAmount": offerAmount
+        },
+        "publicKey": takerMeshKey
+    }
+
+    const mockProposals = new Map()
+    const mockAdjudications = new Map()
+    const mockRulings = new Map()
+
+    proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
+    proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshKey)
+
+    const mockSignatureRequiredMessage = { "body": {} }
+    const mockSignedMessage = { "body": {} }
+    const mockEncryptedMessage = { "body": {} }
+    const mockTransaction = {}
+
+    consumerPeer.buildMessage.mockReturnValue(mockSignatureRequiredMessage)
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
+    encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockEncryptedMessage) }))
+    chain.createBuyerDisburseTransaction.mockReturnValue(new Promise((resolve, reject) => { resolve(mockTransaction) }))
+
+    //Action
+    await processDisburse(buyerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
+
+    //Assert
+    expect(chain.createBuyerDisburseTransaction).toBeCalled()
+    expect(chain.createBuyerDisburseTransaction.mock.calls[0][0]).toEqual(buyerSecret)
+    expect(chain.createBuyerDisburseTransaction.mock.calls[0][1]).toEqual(sellerPublic)
+    expect(chain.createBuyerDisburseTransaction.mock.calls[0][2]).toEqual(challengeStake)
+    expect(chain.createBuyerDisburseTransaction.mock.calls[0][3]).toEqual(offerAmount)
+    expect(chain.createBuyerDisburseTransaction.mock.calls[0][4]).toEqual(proposal.settlementInitiated.body.escrow)
+
+    expect(consumerPeer.buildMessage).toBeCalled()
+    expect(consumerPeer.buildMessage.mock.calls[0][3]).toEqual(takerMeshKey)
+    let signatureRequiredBody = consumerPeer.buildMessage.mock.calls[0][0]
+    expect(signatureRequiredBody.transaction).toEqual(mockTransaction)
+
+    expect(encrypt.signMessage).toBeCalled
+    expect(encrypt.signMessage.mock.calls[0][0]).toEqual(mockSignatureRequiredMessage)
+    expect(encrypt.signMessage.mock.calls[0][1]).toEqual(keys)
+
+    expect(encrypt.encryptMessage).toBeCalled
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toEqual(mockSignedMessage)
+    expect(encrypt.encryptMessage.mock.calls[0][1]).toEqual(takerMeshKey)
+
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('signatureRequired')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(mockEncryptedMessage)
 })
