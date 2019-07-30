@@ -46,7 +46,6 @@ beforeEach(() => {
     encrypt.signMessage.mockReturnValue({})
 })
 
-
 test('processSettleProposal calls initiateSettlement on chain when proposal is resolved (taker as buyer)', async () => {
     //Assemble
     config.consumerId = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
@@ -455,14 +454,13 @@ test('ProcessProposal does', async () => {
     //Assemble
     const param = '{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 100, "timeStamp": "2019-07-23T15:28:56.782Z", "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : []}'
     let proposals = new Map()
-    let adjudications
     const mockProposalMessage = { "body": { "requestId": "abc1234" } }
     consumerPeer.buildMessage.mockReturnValue(mockProposalMessage)
     const mockSignedMessage = { "body": { "requestId": "abc1234" } }
     encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
 
     //Action
-    await processProposal(param, proposals, adjudications, keys)
+    await processProposal(param, proposals, keys)
 
     //Assert
     expect(consumerPeer.sendMessage).toBeCalled()
@@ -688,14 +686,6 @@ test('processDisburse submits transaction when the seller disburses', async () =
 
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
 
-    const mockSignatureRequiredMessage = { "body": {} }
-    const mockSignedMessage = { "body": {} }
-    const mockEncryptedMessage = { "body": {} }
-
-    consumerPeer.buildMessage.mockReturnValue(mockSignatureRequiredMessage)
-    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
-    encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockEncryptedMessage) }))
-
     //Action
     await processDisburse(sellerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
 
@@ -744,8 +734,11 @@ test('processDisburse does not when in adjudication and no ruling', async () => 
     }
 
     const mockProposals = new Map()
+    const mockProposalAdjudications = [{}]
+
     const mockAdjudications = new Map()
-    mockAdjudications.set('abc1234', {})
+    mockAdjudications.set('abc1234', mockProposalAdjudications) 
+
     const mockRulings = new Map()
 
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
@@ -765,6 +758,73 @@ test('processDisburse does not when in adjudication and no ruling', async () => 
     try {
         await processDisburse(buyerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
     } catch (e) {
-        expect(e.message).toBeCalled('transaction is in dispute')
+        expect(e.message).toEqual('transaction is in dispute')
     }
+})
+
+test('processDisburse allows favored party to submit to chain', async () => {
+    //Assemble
+    const sellerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const buyerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const buyerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    config.consumerId = buyerPublic
+    const challengeStake = 100
+    const requestAmount = 200
+    const buyerDisburseJson = '{ "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}'
+
+    keys.publicKey = Buffer.from(takerMeshPublic, 'hex')
+    proposalHelper.getKeyFromPreviousHash.mockReturnValue(takerMeshPublic)
+
+    const proposal = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "piano",
+            "requestAsset": "native",
+            "makerId": sellerPublic,
+            "requestAmount": requestAmount
+        },
+        "publicKey": makerMeshPublic,
+        "settlementInitiated": { "body": { "escrow": "some_account" } }
+    }
+
+    const acceptance = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "piano",
+            "requestAsset": "native",
+            "makerId": sellerPublic,
+            "takerId": buyerPublic,
+            "challengeStake": challengeStake,
+            "requestAmount": requestAmount
+        },
+        "publicKey": takerMeshPublic
+    }
+
+    const mockTransaction = {}
+
+    const ruling = {
+        "body": {
+            "transaction": mockTransaction
+        }
+    }
+
+    const mockProposals = new Map()
+    const mockProposalAdjudications = [{}]
+
+    const mockAdjudications = new Map()
+    mockAdjudications.set('abc1234', mockProposalAdjudications) 
+
+    const mockRulings = new Map()
+    mockRulings.set('abc1234', ruling)
+
+    proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
+    proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshPublic)
+
+    //Action
+    await processDisburse(buyerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
+
+    //Assert
+    expect(chain.submitDisburseTransaction).toBeCalled()
+    expect(chain.submitDisburseTransaction.mock.calls[0][0]).toEqual(buyerSecret)
+    expect(chain.submitDisburseTransaction.mock.calls[0][1]).toEqual(mockTransaction)
 })
