@@ -570,7 +570,7 @@ test('processDisburse sends signature required to seller when the taker is buyer
             "offerAsset": "piano",
             "requestAsset": "native",
             "makerId": sellerPublic,
-            "requestAmount": requestAmount 
+            "requestAmount": requestAmount
         },
         "publicKey": makerMeshPublic,
         "settlementInitiated": { "body": { "escrow": "some_account" } }
@@ -584,7 +584,7 @@ test('processDisburse sends signature required to seller when the taker is buyer
             "makerId": sellerPublic,
             "takerId": buyerPublic,
             "challengeStake": challengeStake,
-            "requestAmount": requestAmount 
+            "requestAmount": requestAmount
         },
         "publicKey": takerMeshPublic
     }
@@ -639,7 +639,7 @@ test('processDisburse submits transaction when the seller disburses', async () =
     //Assemble
     const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
     const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
-    const sellerSecret ='SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    const sellerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
     const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
     const challengeStake = 100
     const offerAmount = 200
@@ -648,7 +648,7 @@ test('processDisburse submits transaction when the seller disburses', async () =
     config.consumerId = sellerPublic
 
     keys.publicKey = Buffer.from(makerMeshPublic, 'hex')
-    
+
     const mockTransaction = {}
 
     const signatureRequired = {
@@ -703,4 +703,68 @@ test('processDisburse submits transaction when the seller disburses', async () =
     expect(chain.submitDisburseTransaction).toBeCalled()
     expect(chain.submitDisburseTransaction.mock.calls[0][0]).toEqual(sellerSecret)
     expect(chain.submitDisburseTransaction.mock.calls[0][1]).toEqual(mockTransaction)
+})
+
+test('processDisburse does not when in adjudication and no ruling', async () => {
+    //Assemble
+    const sellerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const buyerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const buyerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    config.consumerId = buyerPublic
+    const challengeStake = 100
+    const requestAmount = 200
+    const buyerDisburseJson = '{ "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "secret" : "SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT"}'
+
+    keys.publicKey = Buffer.from(takerMeshPublic, 'hex')
+    proposalHelper.getKeyFromPreviousHash.mockReturnValue(takerMeshPublic)
+
+    const proposal = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "piano",
+            "requestAsset": "native",
+            "makerId": sellerPublic,
+            "requestAmount": requestAmount
+        },
+        "publicKey": makerMeshPublic,
+        "settlementInitiated": { "body": { "escrow": "some_account" } }
+    }
+
+    const acceptance = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "piano",
+            "requestAsset": "native",
+            "makerId": sellerPublic,
+            "takerId": buyerPublic,
+            "challengeStake": challengeStake,
+            "requestAmount": requestAmount
+        },
+        "publicKey": takerMeshPublic
+    }
+
+    const mockProposals = new Map()
+    const mockAdjudications = new Map()
+    mockAdjudications.set('abc1234', {})
+    const mockRulings = new Map()
+
+    proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
+    proposalHelper.getKeyFromPreviousHash.mockReturnValue(makerMeshPublic)
+
+    const mockSignatureRequiredMessage = { "body": {} }
+    const mockSignedMessage = { "body": {} }
+    const mockEncryptedMessage = { "body": {} }
+    const mockTransaction = {}
+
+    consumerPeer.buildMessage.mockReturnValue(mockSignatureRequiredMessage)
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
+    encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockEncryptedMessage) }))
+    chain.createBuyerDisburseTransaction.mockReturnValue(new Promise((resolve, reject) => { resolve(mockTransaction) }))
+
+    //Action
+    try {
+        await processDisburse(buyerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
+    } catch (e) {
+        expect(e.message).toBeCalled('transaction is in dispute')
+    }
 })
