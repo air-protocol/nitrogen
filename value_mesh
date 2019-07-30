@@ -15,7 +15,7 @@ function peek() {
 }
 
 function consume() {
-    ((_arg_idx++))
+    ((_arg_idx=_arg_idx + 1))
     true
 }
 

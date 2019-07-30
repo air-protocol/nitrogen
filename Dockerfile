@@ -1,4 +1,6 @@
-FROM node:10.15.3-alpine
+FROM node:10.15.3
+
+RUN apt install python
 
 WORKDIR /usr/src/app
 
