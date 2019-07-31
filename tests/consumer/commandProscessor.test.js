@@ -18,6 +18,7 @@ const { processSettleProposal,
     processProposal,
     processProposalResolved,
     processDisburse,
+    processFulfillment,
     processAdjudication } = require('../../src/consumer/commandProcessor')
 
 chain.initiateSettlement.mockReturnValue({ publicKey: () => 'escrowPublicKey' })
@@ -479,7 +480,7 @@ test('processProposalResolved does', async () => {
     const mockProposalResolvedMessage = {}
     consumerPeer.buildMessage.mockReturnValue(mockProposalResolvedMessage)
     const mockSignedMessage = {}
-    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) })) 
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
 
     //Action 
     await processProposalResolved(param, proposals, keys)
@@ -491,6 +492,70 @@ test('processProposalResolved does', async () => {
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('resolved')
     expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockSignedMessage)
+})
+
+test('processFulfillment does', async () => {
+    //Assemble
+    const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
+    const sellerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    const challengeStake = 100
+    const offerAmount = 200
+
+    const mockFulfillmentMessage = {}
+    const mockEncryptedMessage = {}
+    const mockSignedMessage = {}
+    const param = '{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "fulfillment", "timeStamp": "2019-07-23T15:28:56.782Z", "fulfillment" : "account transfer", "previousHash" : "5d5214ba78b97d49a04a49092ba2ffc1de7b545d64a8c906d5db11c531f78b4f"}'
+    const proposals = new Map()
+
+    consumerPeer.buildMessage.mockReturnValue(mockFulfillmentMessage)
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
+    encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockEncryptedMessage) }))
+
+    config.consumerId = buyerPublic
+
+    const proposal = {
+        "body": {
+            "requestId":
+                "abc1234",
+            "offerAsset":
+                "native",
+            "makerId": buyerPublic,
+        },
+        "publicKey": makerMeshPublic,
+        "fulfillments": [],
+        "settlementInitiated": { "body": { "escrow": "some_account" } }
+    }
+
+    const acceptance = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "native",
+            "makerId": buyerPublic,
+            "takerId": sellerPublic,
+            "challengeStake": challengeStake,
+            "offerAmount": offerAmount
+        },
+        "publicKey": takerMeshPublic,
+    }
+
+    proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
+
+    //Action
+    await processFulfillment(param, proposals, keys)
+
+    //Assert
+    expect(consumerPeer.buildMessage).toBeCalled()
+    expect(encrypt.signMessage).toBeCalled
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(mockFulfillmentMessage)
+    expect(encrypt.signMessage.mock.calls[0][1]).toBe(keys)
+    expect(encrypt.encryptMessage).toBeCalled()
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toBe(mockSignedMessage)
+    expect(encrypt.encryptMessage.mock.calls[0][1]).toMatch(takerMeshPublic)
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('fulfillment')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockEncryptedMessage)
 })
 
 test('processDisburse sends signature required to seller when the maker is buyer', async () => {
