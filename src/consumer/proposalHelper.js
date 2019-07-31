@@ -23,7 +23,7 @@ const getResolvedAcceptance = (requestId, proposals) => {
     }
     let acceptance = undefined
     for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
+        if (proposal.acceptances[i].body.takerId === proposal.resolution.body.takerId) {
             acceptance = proposal.acceptances[i]
         }
     }
