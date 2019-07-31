@@ -16,7 +16,8 @@ const takerMeshPublic = '04a9238a2b56a5c5fe31553e6aa2c3677985d90b4aa635fccfdc6c8
 const { processSettleProposal,
     processValidateAgreement,
     processProposal,
-    processDisburse } = require('../../src/consumer/commandProcessor')
+    processDisburse,
+    processAdjudication } = require('../../src/consumer/commandProcessor')
 
 chain.initiateSettlement.mockReturnValue({ publicKey: () => 'escrowPublicKey' })
 
@@ -413,7 +414,7 @@ test('processValidateAgreement does', async () => {
 
     //Assert
     expect(agreement.validateAgreement).toBeCalled()
-    expect(agreement.validateAgreement.mock.calls[0][0]).toEqual(mockAgreement)
+    expect(agreement.validateAgreement.mock.calls[0][0]).toBe(mockAgreement)
 })
 
 test('processValidateAGreement handles bad agreement index', async () => {
@@ -450,7 +451,7 @@ test('processValidateAGreement handles bad proposal ids', async () => {
     }
 })
 
-test('ProcessProposal does', async () => {
+test('processProposal does', async () => {
     //Assemble
     const param = '{ "requestId" : "abc1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 100, "timeStamp": "2019-07-23T15:28:56.782Z", "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 100, "audience" : []}'
     let proposals = new Map()
@@ -465,7 +466,7 @@ test('ProcessProposal does', async () => {
     //Assert
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('proposal')
-    expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(mockSignedMessage)
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockSignedMessage)
 })
 
 test('processDisburse sends signature required to seller when the maker is buyer', async () => {
@@ -534,19 +535,19 @@ test('processDisburse sends signature required to seller when the maker is buyer
     expect(consumerPeer.buildMessage).toBeCalled()
     expect(consumerPeer.buildMessage.mock.calls[0][3]).toEqual(takerMeshPublic)
     let signatureRequiredBody = consumerPeer.buildMessage.mock.calls[0][0]
-    expect(signatureRequiredBody.transaction).toEqual(mockTransaction)
+    expect(signatureRequiredBody.transaction).toBe(mockTransaction)
 
     expect(encrypt.signMessage).toBeCalled
-    expect(encrypt.signMessage.mock.calls[0][0]).toEqual(mockSignatureRequiredMessage)
-    expect(encrypt.signMessage.mock.calls[0][1]).toEqual(keys)
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(mockSignatureRequiredMessage)
+    expect(encrypt.signMessage.mock.calls[0][1]).toBe(keys)
 
     expect(encrypt.encryptMessage).toBeCalled
-    expect(encrypt.encryptMessage.mock.calls[0][0]).toEqual(mockSignedMessage)
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toBe(mockSignedMessage)
     expect(encrypt.encryptMessage.mock.calls[0][1]).toEqual(takerMeshPublic)
 
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('signatureRequired')
-    expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(mockEncryptedMessage)
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockEncryptedMessage)
 })
 
 test('processDisburse sends signature required to seller when the taker is buyer', async () => {
@@ -618,19 +619,19 @@ test('processDisburse sends signature required to seller when the taker is buyer
     expect(consumerPeer.buildMessage).toBeCalled()
     expect(consumerPeer.buildMessage.mock.calls[0][3]).toEqual(makerMeshPublic)
     let signatureRequiredBody = consumerPeer.buildMessage.mock.calls[0][0]
-    expect(signatureRequiredBody.transaction).toEqual(mockTransaction)
+    expect(signatureRequiredBody.transaction).toBe(mockTransaction)
 
     expect(encrypt.signMessage).toBeCalled
-    expect(encrypt.signMessage.mock.calls[0][0]).toEqual(mockSignatureRequiredMessage)
-    expect(encrypt.signMessage.mock.calls[0][1]).toEqual(keys)
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(mockSignatureRequiredMessage)
+    expect(encrypt.signMessage.mock.calls[0][1]).toBe(keys)
 
     expect(encrypt.encryptMessage).toBeCalled
-    expect(encrypt.encryptMessage.mock.calls[0][0]).toEqual(mockSignedMessage)
-    expect(encrypt.encryptMessage.mock.calls[0][1]).toEqual(makerMeshPublic)
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toBe(mockSignedMessage)
+    expect(encrypt.encryptMessage.mock.calls[0][1]).toBe(makerMeshPublic)
 
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('signatureRequired')
-    expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(mockEncryptedMessage)
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockEncryptedMessage)
 })
 
 test('processDisburse submits transaction when the seller disburses', async () => {
@@ -692,7 +693,7 @@ test('processDisburse submits transaction when the seller disburses', async () =
     //Assert
     expect(chain.submitDisburseTransaction).toBeCalled()
     expect(chain.submitDisburseTransaction.mock.calls[0][0]).toEqual(sellerSecret)
-    expect(chain.submitDisburseTransaction.mock.calls[0][1]).toEqual(mockTransaction)
+    expect(chain.submitDisburseTransaction.mock.calls[0][1]).toBe(mockTransaction)
 })
 
 test('processDisburse does not when in adjudication and no ruling', async () => {
@@ -758,7 +759,7 @@ test('processDisburse does not when in adjudication and no ruling', async () => 
     try {
         await processDisburse(buyerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
     } catch (e) {
-        expect(e.message).toEqual('transaction is in dispute')
+        expect(e.message).toMatch('transaction is in dispute')
     }
 })
 
@@ -889,9 +890,97 @@ test('processDisburse does not allow unfavored party to submit to chain', async 
         await processDisburse(buyerDisburseJson, mockProposals, mockAdjudications, mockRulings, keys)
     }
     catch (e) {
-        expect(e.message).toEqual('jury did not rule in your favor')
+        expect(e.message).toMatch('jury did not rule in your favor')
     }
 
     //Assert
     expect(chain.submitDisburseTransaction).not.toBeCalled()
+})
+
+test('processAdjudicationMessage does', async () => {
+    //Assemble
+    const param = '{ "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z" }'
+    const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
+    const sellerPublic = 'GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV'
+    const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
+    const sellerSecret = 'SDN5W3B2RSO4ZHVCY3EXUIZQD32JDWHVDBAO5A3FBUF4BPQBZZ3ST6IT'
+    const challengeStake = 100
+    const offerAmount = 200
+
+    config.consumerId = buyerPublic
+    config.juryMeshPublicKey = 'some_key'
+
+    keys.publicKey = Buffer.from(makerMeshPublic, 'hex')
+
+    const mockTransaction = {}
+
+    const signatureRequired = {
+        "body": {
+            "transaction": mockTransaction
+        }
+    }
+
+    const proposal = {
+        "body": {
+            "requestId":
+                "abc1234",
+            "offerAsset":
+                "native",
+            "makerId": buyerPublic,
+        },
+        "publicKey": makerMeshPublic,
+        "signatureRequired": signatureRequired,
+        "settlementInitiated": { "body": { "escrow": "some_account" } }
+    }
+
+    const acceptance = {
+        "body": {
+            "requestId": "abc1234",
+            "offerAsset": "native",
+            "makerId": buyerPublic,
+            "takerId": sellerPublic,
+            "challengeStake": challengeStake,
+            "offerAmount": offerAmount
+        },
+        "publicKey": takerMeshPublic,
+    }
+
+    const mockProposals = new Map()
+    const mockAdjudications = new Map()
+
+    const recipientMessage = {}
+    const juryMessage = {}
+
+    const recipientSignedMessage = {}
+    const jurySignedMessage = {}
+
+    const recipientEncryptedMessage = {}
+    const juryEncryptedMessage = {}
+
+    proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
+    consumerPeer.buildMessage.mockReturnValueOnce(recipientMessage).mockReturnValueOnce(juryMessage)
+
+    encrypt.signMessage.mockReturnValueOnce(new Promise((resolve, reject) => {resolve(recipientSignedMessage)}))
+    .mockReturnValueOnce(new Promise((resolve, reject) => {resolve(jurySignedMessage)}))
+
+    encrypt.encryptMessage.mockReturnValueOnce(new Promise((resolve, reject) => {resolve(recipientEncryptedMessage)}))
+    .mockReturnValueOnce(new Promise((resolve, reject) => {resolve(juryEncryptedMessage)}))
+
+    //Action
+    await processAdjudication(param, mockProposals, mockAdjudications, keys)
+
+    //Assert
+    expect(consumerPeer.buildMessage).toBeCalled()
+    expect(consumerPeer.buildMessage.mock.calls[0][3]).toEqual(takerMeshPublic)
+    expect(consumerPeer.buildMessage.mock.calls[1][3]).toEqual(config.juryMeshPublicKey)
+
+    expect(encrypt.signMessage).toBeCalled()
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(recipientMessage)
+    expect(encrypt.signMessage.mock.calls[1][0]).toBe(juryMessage)
+
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('adjudicate')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(recipientEncryptedMessage)
+    expect(consumerPeer.sendMessage.mock.calls[1][0]).toMatch('adjudicate')
+    expect(consumerPeer.sendMessage.mock.calls[1][1]).toBe(juryEncryptedMessage)
 })
