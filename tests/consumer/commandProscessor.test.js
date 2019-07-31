@@ -16,6 +16,7 @@ const takerMeshPublic = '04a9238a2b56a5c5fe31553e6aa2c3677985d90b4aa635fccfdc6c8
 const { processSettleProposal,
     processValidateAgreement,
     processProposal,
+    processProposalResolved,
     processDisburse,
     processAdjudication } = require('../../src/consumer/commandProcessor')
 
@@ -466,6 +467,29 @@ test('processProposal does', async () => {
     //Assert
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toEqual('proposal')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockSignedMessage)
+})
+
+test('processProposalResolved does', async () => {
+    //Assemble
+    const param = '{ "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "resolved", "timeStamp": "2019-07-23T15:28:56.782Z", "previousHash" : "61e000d3d2733a5982c3a7ffe944480829302b193d6747f3a545c8e752278e76"}'
+    const proposals = new Map()
+    proposals.set('cde1234', {})
+
+    const mockProposalResolvedMessage = {}
+    consumerPeer.buildMessage.mockReturnValue(mockProposalResolvedMessage)
+    const mockSignedMessage = {}
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) })) 
+
+    //Action 
+    await processProposalResolved(param, proposals, keys)
+
+    //Assert
+    expect(consumerPeer.buildMessage).toBeCalled()
+    expect(encrypt.signMessage).toBeCalled()
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(mockProposalResolvedMessage)
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('resolved')
     expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockSignedMessage)
 })
 
@@ -960,11 +984,11 @@ test('processAdjudicationMessage does', async () => {
     proposalHelper.getResolvedAcceptance.mockReturnValue({ proposal, acceptance })
     consumerPeer.buildMessage.mockReturnValueOnce(recipientMessage).mockReturnValueOnce(juryMessage)
 
-    encrypt.signMessage.mockReturnValueOnce(new Promise((resolve, reject) => {resolve(recipientSignedMessage)}))
-    .mockReturnValueOnce(new Promise((resolve, reject) => {resolve(jurySignedMessage)}))
+    encrypt.signMessage.mockReturnValueOnce(new Promise((resolve, reject) => { resolve(recipientSignedMessage) }))
+        .mockReturnValueOnce(new Promise((resolve, reject) => { resolve(jurySignedMessage) }))
 
-    encrypt.encryptMessage.mockReturnValueOnce(new Promise((resolve, reject) => {resolve(recipientEncryptedMessage)}))
-    .mockReturnValueOnce(new Promise((resolve, reject) => {resolve(juryEncryptedMessage)}))
+    encrypt.encryptMessage.mockReturnValueOnce(new Promise((resolve, reject) => { resolve(recipientEncryptedMessage) }))
+        .mockReturnValueOnce(new Promise((resolve, reject) => { resolve(juryEncryptedMessage) }))
 
     //Action
     await processAdjudication(param, mockProposals, mockAdjudications, keys)
