@@ -19,7 +19,8 @@ const { processSettleProposal,
     processProposalResolved,
     processDisburse,
     processFulfillment,
-    processAdjudication } = require('../../src/consumer/commandProcessor')
+    processAdjudication,
+    processRuling } = require('../../src/consumer/commandProcessor')
 
 chain.initiateSettlement.mockReturnValue({ publicKey: () => 'escrowPublicKey' })
 
@@ -36,7 +37,10 @@ beforeEach(() => {
     chain.initiateSettlement.mockClear()
     chain.createBuyerDisburseTransaction.mockClear()
     chain.submitDisburseTransaction.mockClear()
+    chain.createFavorBuyerTransaction.mockClear()
+    chain.createFavorSellerTransaction.mockClear()
     agreement.validateAgreement.mockClear()
+    agreement.pullValuesFromAgreement.mockClear()
     consumerPeer.sendMessage.mockClear()
     consumerPeer.buildMessage.mockClear()
     encrypt.encryptMessage.mockClear()
@@ -1072,4 +1076,61 @@ test('processAdjudicationMessage does', async () => {
     expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(recipientEncryptedMessage)
     expect(consumerPeer.sendMessage.mock.calls[1][0]).toMatch('adjudicate')
     expect(consumerPeer.sendMessage.mock.calls[1][1]).toBe(juryEncryptedMessage)
+})
+
+test('processRuling calls createFavorBuyerTransaction when buyer is favored', async () => {
+    //Assemble
+    const buyerMeshKey = 'buyerMeshKey'
+    const sellerMeshKey = 'sellerMeshKey'
+    const buyerStellarKey = 'buyerStellarKey'
+    const sellerStellarKey = 'sellerStellarKey'
+    const escrowStellarKey = 'escrowStellarKey'
+    const nativeAmount = 200
+    const challengeStake = 10
+    const makerId = 'makerId'
+    const takerId = 'takerId'
+    const requestId = 'abc1234'
+    const acceptanceHash = 'acceptanceHash'
+    const param = '{ "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "adjudicationIndex" : 0, "favor" : "buyer", "justification" : "for the fact" }'
+    const jurySecret = 'SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J'
+    const rulings = new Map()
+
+    const mockAgreement = {}
+    const adjudication = {
+        "body": {
+            "agreement": mockAgreement
+        }
+    }
+    const adjudicationsForProposals = [adjudication]
+
+    const adjudications = new Map()
+    adjudications.set('abc1234', adjudicationsForProposals)
+
+    agreement.pullValuesFromAgreement.mockReturnValue(
+        {
+            buyerMeshKey,
+            sellerMeshKey,
+            buyerStellarKey,
+            sellerStellarKey,
+            escrowStellarKey,
+            nativeAmount,
+            challengeStake,
+            makerId,
+            takerId,
+            requestId,
+            acceptanceHash
+        }
+    )
+
+    //Action
+    processRuling(param, adjudications, rulings, keys)
+
+    //Assert
+    expect(agreement.pullValuesFromAgreement).toBeCalled()
+    expect(agreement.pullValuesFromAgreement.mock.calls[0][0]).toBe(mockAgreement)
+    expect(chain.createFavorBuyerTransaction).toBeCalled()
+    expect(chain.createFavorBuyerTransaction.mock.calls[0][0]).toMatch(jurySecret)
+    expect(chain.createFavorBuyerTransaction.mock.calls[0][1]).toMatch(escrowStellarKey)
+    expect(chain.createFavorBuyerTransaction.mock.calls[0][2]).toMatch(buyerStellarKey)
+    expect(chain.createFavorBuyerTransaction.mock.calls[0][3]).toEqual(challengeStake)
 })
