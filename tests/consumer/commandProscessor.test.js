@@ -1094,6 +1094,16 @@ test('processRuling calls createFavorBuyerTransaction when buyer is favored', as
     const param = '{ "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "adjudicationIndex" : 0, "favor" : "buyer", "justification" : "for the fact" }'
     const jurySecret = 'SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J'
     const rulings = new Map()
+    const buyerMessage = { "body": { } }
+    const sellerMessage = { "body": { } }
+    const buyerSignedMessage = {}
+    const sellerSignedMessage = {}
+    const buyerEncryptedMessage = {}
+    const sellerEncryptedMessage = {}
+
+    consumerPeer.buildMessage.mockReturnValueOnce(buyerMessage).mockReturnValueOnce(sellerMessage)
+    encrypt.signMessage.mockReturnValueOnce(buyerSignedMessage).mockReturnValueOnce(sellerSignedMessage)
+    encrypt.encryptMessage.mockReturnValueOnce(buyerEncryptedMessage).mockReturnValueOnce(sellerEncryptedMessage)
 
     const mockAgreement = {}
     const adjudication = {
@@ -1105,6 +1115,9 @@ test('processRuling calls createFavorBuyerTransaction when buyer is favored', as
 
     const adjudications = new Map()
     adjudications.set('abc1234', adjudicationsForProposals)
+
+    const transaction = {}
+    chain.createFavorSellerTransaction.mockReturnValue(transaction)
 
     agreement.pullValuesFromAgreement.mockReturnValue(
         {
@@ -1123,7 +1136,7 @@ test('processRuling calls createFavorBuyerTransaction when buyer is favored', as
     )
 
     //Action
-    processRuling(param, adjudications, rulings, keys)
+    await processRuling(param, adjudications, rulings, keys)
 
     //Assert
     expect(agreement.pullValuesFromAgreement).toBeCalled()
@@ -1151,6 +1164,16 @@ test('processRuling calls createFavorSellerTransaction when seller is favored', 
     const param = '{ "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "adjudicationIndex" : 0, "favor" : "seller", "justification" : "for the fact" }'
     const jurySecret = 'SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J'
     const rulings = new Map()
+    const buyerMessage = { "body": { } }
+    const sellerMessage = { "body": { } }
+    const buyerSignedMessage = {}
+    const sellerSignedMessage = {}
+    const buyerEncryptedMessage = {}
+    const sellerEncryptedMessage = {}
+
+    consumerPeer.buildMessage.mockReturnValueOnce(buyerMessage).mockReturnValueOnce(sellerMessage)
+    encrypt.signMessage.mockReturnValueOnce(buyerSignedMessage).mockReturnValueOnce(sellerSignedMessage)
+    encrypt.encryptMessage.mockReturnValueOnce(buyerEncryptedMessage).mockReturnValueOnce(sellerEncryptedMessage)
 
     const mockAgreement = {}
     const adjudication = {
@@ -1162,6 +1185,9 @@ test('processRuling calls createFavorSellerTransaction when seller is favored', 
 
     const adjudications = new Map()
     adjudications.set('abc1234', adjudicationsForProposals)
+
+    const transaction = {}
+    chain.createFavorSellerTransaction.mockReturnValue(transaction)
 
     agreement.pullValuesFromAgreement.mockReturnValue(
         {
@@ -1180,7 +1206,7 @@ test('processRuling calls createFavorSellerTransaction when seller is favored', 
     )
 
     //Action
-    processRuling(param, adjudications, rulings, keys)
+    await processRuling(param, adjudications, rulings, keys)
 
     //Assert
     expect(agreement.pullValuesFromAgreement).toBeCalled()
@@ -1192,4 +1218,176 @@ test('processRuling calls createFavorSellerTransaction when seller is favored', 
     expect(chain.createFavorSellerTransaction.mock.calls[0][3]).toMatch(sellerStellarKey)
     expect(chain.createFavorSellerTransaction.mock.calls[0][4]).toEqual(challengeStake)
     expect(chain.createFavorSellerTransaction.mock.calls[0][5]).toEqual(nativeAmount)
+})
+
+test('processRuling sends transaction to buyer when favored', async () => {
+    //Assemble
+    const buyerMeshKey = 'buyerMeshKey'
+    const sellerMeshKey = 'sellerMeshKey'
+    const buyerStellarKey = 'buyerStellarKey'
+    const sellerStellarKey = 'sellerStellarKey'
+    const escrowStellarKey = 'escrowStellarKey'
+    const nativeAmount = 200
+    const challengeStake = 10
+    const makerId = 'makerId'
+    const takerId = 'takerId'
+    const requestId = 'abc1234'
+    const acceptanceHash = 'acceptanceHash'
+    const param = '{ "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "adjudicationIndex" : 0, "favor" : "buyer", "justification" : "for the fact" }'
+    const rulings = new Map()
+    const buyerMessage = { "body": { } }
+    const sellerMessage = { "body": { } }
+    const buyerSignedMessage = {}
+    const sellerSignedMessage = {}
+    const buyerEncryptedMessage = {}
+    const sellerEncryptedMessage = {}
+
+    consumerPeer.buildMessage.mockReturnValueOnce(buyerMessage).mockReturnValueOnce(sellerMessage)
+    encrypt.signMessage.mockReturnValueOnce(buyerSignedMessage).mockReturnValueOnce(sellerSignedMessage)
+    encrypt.encryptMessage.mockReturnValueOnce(buyerEncryptedMessage).mockReturnValueOnce(sellerEncryptedMessage)
+
+    const mockAgreement = {}
+    const adjudication = {
+        "body": {
+            "agreement": mockAgreement
+        }
+    }
+    const adjudicationsForProposals = [adjudication]
+
+    const adjudications = new Map()
+    adjudications.set('abc1234', adjudicationsForProposals)
+
+    const transaction = {}
+    chain.createFavorBuyerTransaction.mockReturnValue(transaction)
+
+    agreement.pullValuesFromAgreement.mockReturnValue(
+        {
+            buyerMeshKey,
+            sellerMeshKey,
+            buyerStellarKey,
+            sellerStellarKey,
+            escrowStellarKey,
+            nativeAmount,
+            challengeStake,
+            makerId,
+            takerId,
+            requestId,
+            acceptanceHash
+        }
+    )
+
+    //Action
+    await processRuling(param, adjudications, rulings, keys)
+
+    //Assert
+    expect(agreement.pullValuesFromAgreement).toBeCalled()
+    expect(agreement.pullValuesFromAgreement.mock.calls[0][0]).toBe(mockAgreement)
+
+    expect(consumerPeer.buildMessage).toBeCalled()
+    expect(consumerPeer.buildMessage.mock.calls[0][3]).toEqual(buyerMeshKey)
+    expect(consumerPeer.buildMessage.mock.calls[1][3]).toEqual(sellerMeshKey)
+
+    expect(encrypt.signMessage).toBeCalled()
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(buyerMessage)
+    expect(encrypt.signMessage.mock.calls[1][0]).toBe(sellerMessage)
+
+    expect(buyerMessage.body.transaction).toBe(transaction)
+    expect(sellerMessage.body.transaction).toBe(undefined)
+
+    expect(encrypt.encryptMessage).toBeCalled()
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toBe(buyerSignedMessage)
+    expect(encrypt.encryptMessage.mock.calls[1][0]).toBe(sellerSignedMessage)
+
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('ruling')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(buyerEncryptedMessage)
+
+    expect(consumerPeer.sendMessage.mock.calls[1][0]).toMatch('ruling')
+    expect(consumerPeer.sendMessage.mock.calls[1][1]).toBe(sellerEncryptedMessage)
+})
+
+test('processRuling sends transaction to seller when favored', async () => {
+    //Assemble
+    const buyerMeshKey = 'buyerMeshKey'
+    const sellerMeshKey = 'sellerMeshKey'
+    const buyerStellarKey = 'buyerStellarKey'
+    const sellerStellarKey = 'sellerStellarKey'
+    const escrowStellarKey = 'escrowStellarKey'
+    const nativeAmount = 200
+    const challengeStake = 10
+    const makerId = 'makerId'
+    const takerId = 'takerId'
+    const requestId = 'abc1234'
+    const acceptanceHash = 'acceptanceHash'
+    const param = '{ "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "adjudicationIndex" : 0, "favor" : "seller", "justification" : "for the fact" }'
+    const rulings = new Map()
+    const buyerMessage = { "body": { } }
+    const sellerMessage = { "body": { } }
+    const buyerSignedMessage = {}
+    const sellerSignedMessage = {}
+    const buyerEncryptedMessage = {}
+    const sellerEncryptedMessage = {}
+
+    consumerPeer.buildMessage.mockReturnValueOnce(buyerMessage).mockReturnValueOnce(sellerMessage)
+    encrypt.signMessage.mockReturnValueOnce(buyerSignedMessage).mockReturnValueOnce(sellerSignedMessage)
+    encrypt.encryptMessage.mockReturnValueOnce(buyerEncryptedMessage).mockReturnValueOnce(sellerEncryptedMessage)
+
+    const mockAgreement = {}
+    const adjudication = {
+        "body": {
+            "agreement": mockAgreement
+        }
+    }
+    const adjudicationsForProposals = [adjudication]
+
+    const adjudications = new Map()
+    adjudications.set('abc1234', adjudicationsForProposals)
+
+    const transaction = {}
+    chain.createFavorSellerTransaction.mockReturnValue(transaction)
+
+    agreement.pullValuesFromAgreement.mockReturnValue(
+        {
+            buyerMeshKey,
+            sellerMeshKey,
+            buyerStellarKey,
+            sellerStellarKey,
+            escrowStellarKey,
+            nativeAmount,
+            challengeStake,
+            makerId,
+            takerId,
+            requestId,
+            acceptanceHash
+        }
+    )
+
+    //Action
+    await processRuling(param, adjudications, rulings, keys)
+
+    //Assert
+    expect(agreement.pullValuesFromAgreement).toBeCalled()
+    expect(agreement.pullValuesFromAgreement.mock.calls[0][0]).toBe(mockAgreement)
+
+    expect(consumerPeer.buildMessage).toBeCalled()
+    expect(consumerPeer.buildMessage.mock.calls[0][3]).toEqual(buyerMeshKey)
+    expect(consumerPeer.buildMessage.mock.calls[1][3]).toEqual(sellerMeshKey)
+
+    expect(encrypt.signMessage).toBeCalled()
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(buyerMessage)
+    expect(encrypt.signMessage.mock.calls[1][0]).toBe(sellerMessage)
+
+    expect(sellerMessage.body.transaction).toBe(transaction)
+    expect(buyerMessage.body.transaction).toBe(undefined)
+
+    expect(encrypt.encryptMessage).toBeCalled()
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toBe(buyerSignedMessage)
+    expect(encrypt.encryptMessage.mock.calls[1][0]).toBe(sellerSignedMessage)
+
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('ruling')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(buyerEncryptedMessage)
+
+    expect(consumerPeer.sendMessage.mock.calls[1][0]).toMatch('ruling')
+    expect(consumerPeer.sendMessage.mock.calls[1][1]).toBe(sellerEncryptedMessage)
 })
