@@ -17,6 +17,9 @@ const { processSettleProposal,
     processValidateAgreement,
     processProposal,
     processProposalResolved,
+    processAcceptProposal,
+    processNegotiationMessage,
+    processCounterOffer,
     processDisburse,
     processFulfillment,
     processAdjudication,
@@ -560,6 +563,59 @@ test('processFulfillment does', async () => {
     expect(consumerPeer.sendMessage).toBeCalled()
     expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('fulfillment')
     expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(mockEncryptedMessage)
+})
+
+test('processAcceptProposal does', async () => {
+    //Assemble
+    const param = '{ "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 80, "timeStamp": "2019-07-23T15:28:56.782Z", "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 5, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "accepted", "previousHash" : "534309e0e155bbf01442fde4e23b236bacfcd83c2dcd93775fa4306009ad9f8e"}'
+
+    const proposals = new Map()
+    proposals.set('cde1234', {'acceptances': []})
+
+    const mockAcceptMessage = {}
+    consumerPeer.buildMessage.mockReturnValue(mockAcceptMessage)
+    const mockSignedMessage = {}
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
+    const encryptedAcceptMessage = {}
+    encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(encryptedAcceptMessage) }))
+
+    //Action 
+    await processAcceptProposal(param, proposals, keys)
+
+    //Assert
+    expect(encrypt.signMessage).toBeCalled()
+    expect(encrypt.signMessage.mock.calls[0][0]).toBe(mockAcceptMessage)
+    expect(encrypt.encryptMessage).toBeCalled()
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toBe(mockSignedMessage)
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('accept')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toBe(encryptedAcceptMessage)
+})
+
+test('processCounterOffer does', async () => {
+    //Assemble
+   const param =  '{ "requestId" : "cde1234", "makerId" : "GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3", "offerAsset" : "native", "offerAmount" : 200, "requestAsset" : "peanuts", "requestAmount" : 80, "timeStamp": "2019-07-23T15:28:56.782Z", "conditions" : [], "juryPool" : "ghi1234", "challengeStake" : 5, "audience" : [], "takerId" : "GBRI4IPIXK63UJ2CLRWNPNCGDE43CAPIZ5B3VMWG3M4DQIWZPRQAGAHV", "message" : "countered", "previousHash" : "61e000d3d2733a5982c3a7ffe944480829302b193d6747f3a545c8e752278e76"}'
+    const proposals = new Map()
+    proposals.set('cde1234', {'counterOffers': []})
+
+    //Action
+    await processCounterOffer(param, proposals, keys)
+
+    const mockCounterOfferMessage = {}
+    consumerPeer.buildMessage.mockReturnValue(mockCounterOfferMessage)
+    const mockSignedMessage = {}
+    encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
+    const encryptedCounterOfferMessage = {}
+    encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(encryptedCounterOfferMessage) }))
+
+    //Assert
+    expect(encrypt.signMessage).toBeCalled()
+    expect(encrypt.signMessage.mock.calls[0][0]).toEqual(mockCounterOfferMessage)
+    expect(encrypt.encryptMessage).toBeCalled()
+    expect(encrypt.encryptMessage.mock.calls[0][0]).toEqual(mockSignedMessage)
+    expect(consumerPeer.sendMessage).toBeCalled()
+    expect(consumerPeer.sendMessage.mock.calls[0][0]).toMatch('counterOffer')
+    expect(consumerPeer.sendMessage.mock.calls[0][1]).toEqual(encryptedCounterOfferMessage)
 })
 
 test('processDisburse sends signature required to seller when the maker is buyer', async () => {
