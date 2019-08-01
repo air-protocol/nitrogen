@@ -1134,3 +1134,62 @@ test('processRuling calls createFavorBuyerTransaction when buyer is favored', as
     expect(chain.createFavorBuyerTransaction.mock.calls[0][2]).toMatch(buyerStellarKey)
     expect(chain.createFavorBuyerTransaction.mock.calls[0][3]).toEqual(challengeStake)
 })
+
+test('processRuling calls createFavorSellerTransaction when seller is favored', async () => {
+    //Assemble
+    const buyerMeshKey = 'buyerMeshKey'
+    const sellerMeshKey = 'sellerMeshKey'
+    const buyerStellarKey = 'buyerStellarKey'
+    const sellerStellarKey = 'sellerStellarKey'
+    const escrowStellarKey = 'escrowStellarKey'
+    const nativeAmount = 200
+    const challengeStake = 10
+    const makerId = 'makerId'
+    const takerId = 'takerId'
+    const requestId = 'abc1234'
+    const acceptanceHash = 'acceptanceHash'
+    const param = '{ "secret" : "SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J", "requestId" : "abc1234", "timeStamp": "2019-07-23T15:28:56.782Z", "adjudicationIndex" : 0, "favor" : "seller", "justification" : "for the fact" }'
+    const jurySecret = 'SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J'
+    const rulings = new Map()
+
+    const mockAgreement = {}
+    const adjudication = {
+        "body": {
+            "agreement": mockAgreement
+        }
+    }
+    const adjudicationsForProposals = [adjudication]
+
+    const adjudications = new Map()
+    adjudications.set('abc1234', adjudicationsForProposals)
+
+    agreement.pullValuesFromAgreement.mockReturnValue(
+        {
+            buyerMeshKey,
+            sellerMeshKey,
+            buyerStellarKey,
+            sellerStellarKey,
+            escrowStellarKey,
+            nativeAmount,
+            challengeStake,
+            makerId,
+            takerId,
+            requestId,
+            acceptanceHash
+        }
+    )
+
+    //Action
+    processRuling(param, adjudications, rulings, keys)
+
+    //Assert
+    expect(agreement.pullValuesFromAgreement).toBeCalled()
+    expect(agreement.pullValuesFromAgreement.mock.calls[0][0]).toBe(mockAgreement)
+    expect(chain.createFavorSellerTransaction).toBeCalled()
+    expect(chain.createFavorSellerTransaction.mock.calls[0][0]).toMatch(jurySecret)
+    expect(chain.createFavorSellerTransaction.mock.calls[0][1]).toMatch(escrowStellarKey)
+    expect(chain.createFavorSellerTransaction.mock.calls[0][2]).toMatch(buyerStellarKey)
+    expect(chain.createFavorSellerTransaction.mock.calls[0][3]).toMatch(sellerStellarKey)
+    expect(chain.createFavorSellerTransaction.mock.calls[0][4]).toEqual(challengeStake)
+    expect(chain.createFavorSellerTransaction.mock.calls[0][5]).toEqual(nativeAmount)
+})
