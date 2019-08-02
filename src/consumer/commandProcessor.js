@@ -3,22 +3,8 @@ const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement, pullValuesFromAgreement, validateAgreement } = require('./agreement')
 const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema } = require('../models/schemas')
 const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chain')
+const { getKeyFromPreviousHash, getResolvedAcceptance } = require('./proposalHelper')
 const hostConfiguration = require('../config/config')
-
-const getKeyFromPreviousHash = (previousHash, proposal) => {
-    let recipientKey = undefined
-    if (previousHash === proposal.hash) {
-        recipientKey = proposal.publicKey
-    } else {
-        for (i = 0; i < proposal.counterOffers.length; i++) {
-            if (previousHash === proposal.counterOffers[i].hash) {
-                recipientKey = proposal.counterOffers[i].publicKey
-                break
-            }
-        }
-    }
-    return recipientKey
-}
 
 const processProposal = async (param, proposals, keys) => {
     let proposalBody = JSON.parse(param)
@@ -116,26 +102,6 @@ const processAdjudication = async (param, proposals, adjudications, keys) => {
     }
 }
 
-const getResolvedAcceptance = (requestId, proposals) => {
-    let proposal = proposals.get(requestId)
-    if (!proposal) {
-        throw new Error('Unable to locate proposal')
-    }
-    if (!proposal.resolution) {
-        throw new Error('Proposal is not resolved')
-    }
-    let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
-        }
-    }
-    if (!acceptance) {
-        throw new Error('Proposal did not resolve an acceptance')
-    }
-    return { proposal, acceptance }
-}
-
 const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, amount, acceptance, proposal, keys) => {
     transaction = await createBuyerDisburseTransaction(secret,
         sellerKey,
@@ -219,10 +185,10 @@ const processDisburse = async (param, proposals, adjudications, rulings, keys) =
         }
     } else if ((acceptance.body.offerAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.makerId)) {
         //Buyer initiating disburse (maker is buyer)
-        processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.takerId, recipientKey, acceptance.body.offerAmount, acceptance, proposal, keys)
+        await processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.takerId, recipientKey, acceptance.body.offerAmount, acceptance, proposal, keys)
     } else if ((acceptance.body.requestAsset === 'native') && (hostConfiguration.consumerId === acceptance.body.takerId)) {
         //Buyer initiating disburse (taker is buyer)
-        processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.makerId, recipientKey, acceptance.body.requestAmount, acceptance, proposal, keys)
+        await processBuyerInitiatedDisburse(disbursementBody.secret, acceptance.body.makerId, recipientKey, acceptance.body.requestAmount, acceptance, proposal, keys)
     } else {
         //Seller is signing and collecting
         if (proposal.signatureRequired) {
@@ -344,7 +310,7 @@ const processValidateAgreement = async (param, adjudications) => {
 const processViewAgreement = async (param, adjudications) => {
     const agreementParams = JSON.parse(param)
     const adjudication = adjudications.get(agreementParams.requestId)
-    if(!adjudication) {
+    if (!adjudication) {
         throw new Error("There is no adjudication with that requestId and agreementIndex")
     }
     const agreement = adjudication[agreementParams.agreementIndex].body.agreement
