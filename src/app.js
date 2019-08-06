@@ -32,8 +32,8 @@ connectToPeers().then(() => { logger.info('peers connected') }).catch((e) => {
     }
 })
 
-server.listen(hostConfiguration.port, hostConfiguration.address, () => {
-    logger.info('listen address: ' + server.address().address + ':' + server.address().port)
+server.listen(hostConfiguration.port, () => {
+    logger.info('listening on port: ' + server.address().port)
     serverSocket.sockets.on('connect', (socket) => {
         logger.silly('inbound connection made')
 

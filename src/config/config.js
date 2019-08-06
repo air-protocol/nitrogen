@@ -1,4 +1,5 @@
 //TODO make a separate config file for the consumer
+//In production set addresses to externally available ip
 const argv = require('yargs').argv
 
 const hostConfig = {
@@ -6,7 +7,7 @@ const hostConfig = {
     address: argv.address || '127.0.0.1',
     bootNode: argv.bootNode || false,
     refreshDirectory: argv.refreshDirectory || false,
-    port: argv.port || 4020,
+    port: argv.port || 50505,
     outboundCount: 3,
     maxMessageStore: argv.maxMessageStore || 5000,
     addMeTTL: argv.addMeTTL || 500,
