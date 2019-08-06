@@ -49,7 +49,7 @@ const consumerConnectToPeer = (clientio, peerAddress, keys, proposals, adjudicat
                 consumerCounterOfferHandler(counterOffer, proposals, keys)
             })
             peerSocket.on('proposal', (proposal) => {
-                consumerProposalHandler(proposal, proposals, adjudications, keys)
+                consumerProposalHandler(proposal, proposals, keys)
             })
             peerSocket.on('accept', (acceptMessage) => {
                 consumerAcceptHandler(acceptMessage, proposals, keys)

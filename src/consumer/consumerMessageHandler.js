@@ -1,23 +1,10 @@
 const localCache = require('../cache')
-const hostConfiguration = require('../config/config')
+const config = require('../config/config')
 const { decryptMessage, verifyMessage } = require('../encrypt')
-const logger = require('../logging')
+const logger = require('./clientLogging')
+const {messageSeen} = require('./messageTracker')
 
-const consumerId = hostConfiguration.consumerId
-let messageUUIDs = []
-
-const messageSeen = (messageUUID) => {
-    if (!messageUUIDs.includes(messageUUID)) {
-        if (messageUUIDs.length >= hostConfiguration.maxMessageStore) {
-            messageUUIDs.shift()
-        }
-        messageUUIDs.push(messageUUID)
-        return false
-    }
-    return true
-}
-
-const consumerProposalHandler = async (proposal, proposals, adjudications, keys) => {
+const consumerProposalHandler = async (proposal, proposals, keys) => {
     //If you have not processed the message
     //and it is from another party (your key !== message key)
     if ((!messageSeen(proposal.uuid)) && (keys.publicKey.toString('hex') !== proposal.publicKey)) {
@@ -42,7 +29,7 @@ const consumerProposalResolvedHandler = async (resolution, proposals) => {
             logger.warn("Couldn't verify message signature on inbound proposal resolution")
             return
         }
-        if ((resolution.body.makerId != consumerId) && (resolution.body.takerId != consumerId)) {
+        if ((resolution.body.makerId !== config.consumerId) && (resolution.body.takerId !== config.consumerId)) {
             proposals.delete(resolution.body.requestId)
         } else {
             let proposal = proposals.get(resolution.body.requestId)
