@@ -102,7 +102,7 @@ test('consumerProposalHandler rejects proposals with an existing id', async () =
     expect(logger.warn.mock.calls[0][0]).toEqual("A proposal with that requestId already exists.")
 })
 
-test('consumerProposalREsolvedHandler adds resolution to the data model', async () => {
+test('consumerProposalResolvedHandler adds resolution to the data model', async () => {
     //Assemble
     config.consumerId = 'makerId'
 
@@ -133,4 +133,39 @@ test('consumerProposalREsolvedHandler adds resolution to the data model', async 
 
     //Assert
     expect(proposal.resolution).toBe(resolution)
+})
+
+test('consumerProposalResolvedHandler handles bad signature', async () => {
+    //Assemble
+    config.consumerId = 'makerId'
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const resolution = {
+        'uuid': 'someid',
+        'body': {
+            'makerId': 'makerId',
+            'takerId': 'takerId',
+            'requestId': 'abc123'
+        }
+    }
+
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(false) }))
+    messageSeen.mockReturnValue(false)
+
+    //Action
+    await consumerProposalResolvedHandler(resolution, proposals)
+
+    //Assert
+    expect(proposal.resolution).toBe(undefined)
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toEqual("Couldn't verify message signature on inbound proposal resolution")
 })
