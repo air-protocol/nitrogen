@@ -11,7 +11,7 @@ const cache = require('../../src/cache')
 
 const { consumerProposalHandler,
     consumerProposalResolvedHandler,
-    consumerAddMeHandler} = require('../../src/consumer/consumerMessageHandler')
+    consumerAddMeHandler } = require('../../src/consumer/consumerMessageHandler')
 
 let publicKey = Buffer.from('public')
 let privateKey = Buffer.from('private')
@@ -264,4 +264,26 @@ test('consumerAddMeHandler adds peer to local directory', () => {
     expect(cache.setKey.mock.calls[0][1]).toBe(directory)
     expect(cache.save).toBeCalled()
     expect(directory.includes('someaddress')).toBeTruthy()
+})
+
+test('consumerAddMeHandler does not add duplicate addresses', () => {
+    //Assemble
+    const directory = ['someaddress']
+    const expected = ['someaddress']
+    const peerMessage = {
+        'uuid': 'someid',
+        'address': 'someaddress'
+    }
+
+    cache.getKey.mockReturnValue(directory)
+
+    //Action
+    consumerAddMeHandler(peerMessage)
+
+    //Assert
+    expect(cache.getKey).toBeCalled()
+    expect(cache.getKey.mock.calls[0][0]).toMatch('directory')
+    expect(cache.setKey).not.toBeCalled()
+    expect(cache.save).not.toBeCalled()
+    expect(directory).toEqual(expected)
 })
