@@ -310,6 +310,7 @@ test('consumerCounterOfferHandler handles bad signature', async () => {
         'counterOffers': []
     }
     const proposals = new Map()
+    proposals.set('abc123', proposal)
 
     //Action
     await consumerCounterOfferHandler(peerMessage, proposals, keys)
@@ -345,6 +346,7 @@ test('consumerCounterOfferHandler rejects counter offers for proposals not in th
         'counterOffers': []
     }
     const proposals = new Map()
+    proposals.set('abc123', proposal)
 
     //Action
     await consumerCounterOfferHandler(peerMessage, proposals, keys)
@@ -354,4 +356,39 @@ test('consumerCounterOfferHandler rejects counter offers for proposals not in th
     expect(proposal.counterOffers.length).toEqual(0)
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toMatch("Unable to locate original proposal for inbound counter offer")
+})
+
+test('consumerCounterOfferHandler adds to the data model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'counterOffers': []
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+    //Action
+    await consumerCounterOfferHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(decryptMessage).toBeCalled()
+    expect(proposal.counterOffers.length).toEqual(1)
+    expect(proposal.counterOffers[0]).toBe(decryptedMessage)
 })
