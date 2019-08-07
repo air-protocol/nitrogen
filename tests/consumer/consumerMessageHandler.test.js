@@ -11,10 +11,11 @@ const cache = require('../../src/cache')
 
 const { consumerProposalHandler,
     consumerProposalResolvedHandler,
-    consumerAddMeHandler } = require('../../src/consumer/consumerMessageHandler')
+    consumerAddMeHandler,
+    consumerCounterOfferHandler } = require('../../src/consumer/consumerMessageHandler')
 
-let publicKey = Buffer.from('public')
-let privateKey = Buffer.from('private')
+let publicKey = Buffer.from('public', 'hex')
+let privateKey = Buffer.from('private', 'hex')
 let keys = { publicKey, privateKey }
 
 beforeEach(() => {
@@ -26,7 +27,7 @@ beforeEach(() => {
     cache.setKey.mockClear()
     cache.save.mockClear()
 })
-
+  
 test('consumerProposalHandler rejects messages with a bad signature', async () => {
     //Assemble
     const proposal = {
@@ -286,4 +287,36 @@ test('consumerAddMeHandler does not add duplicate addresses', () => {
     expect(cache.setKey).not.toBeCalled()
     expect(cache.save).not.toBeCalled()
     expect(directory).toEqual(expected)
+})
+
+test('consumerCounterOfferHandler handles bad signature', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(false) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body' : {
+            'requestId': 'abc123'
+        }
+    }
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'counterOffers': []
+    }
+    const proposals = new Map()
+
+    //Action
+    await consumerCounterOfferHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(proposal.counterOffers.length).toEqual(0)
+    expect(logger.warn).toBeCalled()
+    expect(decryptMessage).not.toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound counter offer: Error: Couldn't verify message signature")
 })
