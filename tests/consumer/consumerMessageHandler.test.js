@@ -203,3 +203,36 @@ test('consumerProposalResolvedHandler rejects resolution for proposals not in da
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toEqual("Unable to find proposal for inbound proposal resolution")
 })
+
+test('consumerProposalResolvedHandler adds removes proposal when you are not the maker or taker', async () => {
+    //Assemble
+    config.consumerId = 'Bill'
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const resolution = {
+        'uuid': 'someid',
+        'body': {
+            'makerId': 'makerId',
+            'takerId': 'takerId',
+            'requestId': 'abc123'
+        }
+    }
+
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    //Action
+    await consumerProposalResolvedHandler(resolution, proposals)
+
+    //Assert
+    expect(proposals.get('abc123')).toBe(undefined)
+})
