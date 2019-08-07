@@ -414,7 +414,8 @@ test('consumerAcceptHandler rejects bad signatures', async () => {
         'uuid': 'someid',
         'body': {
             'requestId': 'abc123'
-        }
+        },
+        'acceptances': []
     }
     const proposals = new Map()
     proposals.set('abc123', proposal)
@@ -426,4 +427,40 @@ test('consumerAcceptHandler rejects bad signatures', async () => {
     //Assert
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound acceptance: Error: Couldn't verify message signature")
+})
+
+test('consumerAcceptHandler rejects acceptances for proposal not in the data model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'cde123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'acceptances': []
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+
+    //Action
+    await consumerAcceptHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("Unable to locate original proposal for inbound acceptance")
+    expect(proposal.acceptances.length).toEqual(0)
 })
