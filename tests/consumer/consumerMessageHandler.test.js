@@ -27,7 +27,7 @@ beforeEach(() => {
     cache.setKey.mockClear()
     cache.save.mockClear()
 })
-  
+
 test('consumerProposalHandler rejects messages with a bad signature', async () => {
     //Assemble
     const proposal = {
@@ -297,7 +297,7 @@ test('consumerCounterOfferHandler handles bad signature', async () => {
     const peerMessage = {
         'recipientKey': keys.publicKey.toString('hex'),
         'uuid': 'someid',
-        'body' : {
+        'body': {
             'requestId': 'abc123'
         }
     }
@@ -316,7 +316,42 @@ test('consumerCounterOfferHandler handles bad signature', async () => {
 
     //Assert
     expect(proposal.counterOffers.length).toEqual(0)
-    expect(logger.warn).toBeCalled()
     expect(decryptMessage).not.toBeCalled()
+    expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound counter offer: Error: Couldn't verify message signature")
+})
+
+test('consumerCounterOfferHandler rejects counter offers for proposals not in the data model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'cde123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'counterOffers': []
+    }
+    const proposals = new Map()
+
+    //Action
+    await consumerCounterOfferHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(decryptMessage).toBeCalled()
+    expect(proposal.counterOffers.length).toEqual(0)
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("Unable to locate original proposal for inbound counter offer")
 })
