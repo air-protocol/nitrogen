@@ -464,3 +464,38 @@ test('consumerAcceptHandler rejects acceptances for proposal not in the data mod
     expect(logger.warn.mock.calls[0][0]).toMatch("Unable to locate original proposal for inbound acceptance")
     expect(proposal.acceptances.length).toEqual(0)
 })
+
+test('consumerAcceptHandler adds to data model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'acceptances': []
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+
+    //Action
+    await consumerAcceptHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(proposal.acceptances.length).toEqual(1)
+    expect(proposal.acceptances[0]).toBe(decryptedMessage)
+})
