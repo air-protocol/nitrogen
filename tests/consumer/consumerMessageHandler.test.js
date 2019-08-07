@@ -1,14 +1,17 @@
 jest.mock('../../src/consumer/messageTracker')
 jest.mock('../../src/encrypt')
 jest.mock('../../src/consumer/clientLogging')
+jest.mock('../../src/cache')
 
 const { messageSeen } = require('../../src/consumer/messageTracker')
 const { decryptMessage, verifyMessage } = require('../../src/encrypt')
 const logger = require('../../src/consumer/clientLogging')
 const config = require('../../src/config/config')
+const cache = require('../../src/cache')
 
 const { consumerProposalHandler,
-    consumerProposalResolvedHandler } = require('../../src/consumer/consumerMessageHandler')
+    consumerProposalResolvedHandler,
+    consumerAddMeHandler} = require('../../src/consumer/consumerMessageHandler')
 
 let publicKey = Buffer.from('public')
 let privateKey = Buffer.from('private')
@@ -19,6 +22,9 @@ beforeEach(() => {
     decryptMessage.mockClear()
     verifyMessage.mockClear()
     logger.warn.mockClear()
+    cache.getKey.mockClear()
+    cache.setKey.mockClear()
+    cache.save.mockClear()
 })
 
 test('consumerProposalHandler rejects messages with a bad signature', async () => {
@@ -235,4 +241,27 @@ test('consumerProposalResolvedHandler adds removes proposal when you are not the
 
     //Assert
     expect(proposals.get('abc123')).toBe(undefined)
+})
+
+test('consumerAddMeHandler adds peer to local directory', () => {
+    //Assemble
+    const directory = []
+    const peerMessage = {
+        'uuid': 'someid',
+        'address': 'someaddress'
+    }
+
+    cache.getKey.mockReturnValue(directory)
+
+    //Action
+    consumerAddMeHandler(peerMessage)
+
+    //Assert
+    expect(cache.getKey).toBeCalled()
+    expect(cache.getKey.mock.calls[0][0]).toMatch('directory')
+    expect(cache.setKey).toBeCalled()
+    expect(cache.setKey.mock.calls[0][0]).toMatch('directory')
+    expect(cache.setKey.mock.calls[0][1]).toBe(directory)
+    expect(cache.save).toBeCalled()
+    expect(directory.includes('someaddress')).toBeTruthy()
 })
