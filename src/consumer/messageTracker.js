@@ -1,8 +1,11 @@
+
+const config = require('../config/config')
+
 let messageUUIDs = []
 
 const messageSeen = (messageUUID) => {
     if (!messageUUIDs.includes(messageUUID)) {
-        if (messageUUIDs.length >= hostConfiguration.maxMessageStore) {
+        if (messageUUIDs.length >= config.maxMessageStore) {
             messageUUIDs.shift()
         }
         messageUUIDs.push(messageUUID)
