@@ -169,3 +169,37 @@ test('consumerProposalResolvedHandler handles bad signature', async () => {
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toEqual("Couldn't verify message signature on inbound proposal resolution")
 })
+
+test('consumerProposalResolvedHandler rejects resolution for proposals not in data model', async () => {
+    //Assemble
+    config.consumerId = 'makerId'
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'cde123'
+        }
+    }
+
+    const resolution = {
+        'uuid': 'someid',
+        'body': {
+            'makerId': 'makerId',
+            'takerId': 'takerId',
+            'requestId': 'abc123'
+        }
+    }
+
+    const proposals = new Map()
+    proposals.set('cde123', proposal)
+
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    //Action
+    await consumerProposalResolvedHandler(resolution, proposals)
+
+    //Assert
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toEqual("Unable to find proposal for inbound proposal resolution")
+})
