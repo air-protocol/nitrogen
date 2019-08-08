@@ -327,7 +327,6 @@ test('consumerCounterOfferHandler handles bad signature', async () => {
 
     //Assert
     expect(proposal.counterOffers.length).toEqual(0)
-    expect(decryptMessage).not.toBeCalled()
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound counter offer: Error: Couldn't verify message signature")
 })

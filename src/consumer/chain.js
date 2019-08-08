@@ -5,8 +5,9 @@ const hostConfiguration = require('../config/config')
 
 //uncomment for test network
 //stellar.Network.useTestNetwork()
+stellar.Network.usePublicNetwork()
 
-const platformFees = 10
+const platformFees = 1
 
 const createEscrow = async (server, buyerPair, challengeStake, nativeAmount) => {
     //Covers minimum balance and operations costs.  Balance returned to buyer during merge.
@@ -97,12 +98,12 @@ const configureEscrow = async (server, buyerPair, escrowPair, sellerKey, juryKey
 }
 
 const viewEscrow = async (accountId) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const server = new stellar.Server('https://horizon.stellar.org')
     return server.accounts().accountId(accountId).call()
 }
 
 const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const server = new stellar.Server('https://horizon.stellar.org')
 
     const buyerPair = stellar.Keypair.fromSecret(secret)
 
@@ -113,7 +114,7 @@ const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, na
 }
 
 const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake, nativeAmount, escrowKey) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const server = new stellar.Server('https://horizon.stellar.org')
     const escrowAccount = await server.loadAccount(escrowKey)
     const platformKey = hostConfiguration.platformKey
 
@@ -152,7 +153,7 @@ const createBuyerDisburseTransaction = async (secret, sellerKey, challengeStake,
 }
 
 const submitDisburseTransaction = async (secret, xdrTransaction) => {
-    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const server = new stellar.Server('https://horizon.stellar.org')
 
     const buyerPair = stellar.Keypair.fromSecret(secret)
 
@@ -169,14 +170,14 @@ const submitDisburseTransaction = async (secret, xdrTransaction) => {
 }
 
 const transactionHistory = async (accountId) => {
-    const response = await fetch(`https://horizon-testnet.stellar.org/accounts/${accountId}/transactions`)
+    const response = await fetch(`https://horizon.stellar.org/accounts/${accountId}/transactions`)
     const responseJson = await response.json()
     return responseJson._embedded.records
 }
 
 const createFavorBuyerTransaction = async (secret, escrowStellarKey, buyerStellarKey, challengeStake) => {
 //ruling in favor of buyer - pay challenge fees to jury, platform, and merge escrow to buyers account
-    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const server = new stellar.Server('https://horizon.stellar.org')
     const escrowAccount = await server.loadAccount(escrowStellarKey)
     const platformKey = hostConfiguration.platformKey
 
@@ -216,7 +217,7 @@ const createFavorBuyerTransaction = async (secret, escrowStellarKey, buyerStella
 
 const createFavorSellerTransaction = async (secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount) => {
 //ruling in favor of seller - pay challenge fees to jury, offerAmount to seller, and merge escrow to buyers account
-    const server = new stellar.Server('https://horizon-testnet.stellar.org')
+    const server = new stellar.Server('https://horizon.stellar.org')
     const escrowAccount = await server.loadAccount(escrowStellarKey)
     const platformKey = hostConfiguration.platformKey
 
