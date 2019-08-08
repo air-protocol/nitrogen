@@ -18,7 +18,8 @@ const { consumerProposalHandler,
     consumerAcceptHandler,
     consumerFulfillmentHandler,
     consumerSettlementInitiatedHandler,
-    consumerFinalDisburseHandler } = require('../../src/consumer/consumerMessageHandler')
+    consumerFinalDisburseHandler,
+    consumerAdjudicationHandler } = require('../../src/consumer/consumerMessageHandler')
 
 let publicKey = Buffer.from('public', 'hex')
 let privateKey = Buffer.from('private', 'hex')
@@ -880,4 +881,34 @@ test('consumerFinalDisburse adds to data model', async () => {
 
     //Assert
     expect(proposal.disbursed).toBe(decryptedMessage)
+})
+
+test('consumerAdjudicaitonHandler rejects bad signatures', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(false) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+
+    const adjudications = new Map()
+    const adjudicationsForProposal = []
+    adjudications.set('abc123', adjudicationsForProposal)
+
+    //Action
+    await consumerAdjudicationHandler(peerMessage, adjudications, keys)
+
+
+    //Assert
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound adjudication: Error: Couldn't verify message signature")
 })
