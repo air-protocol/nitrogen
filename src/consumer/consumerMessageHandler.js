@@ -2,7 +2,8 @@ const localCache = require('../cache')
 const config = require('../config/config')
 const { decryptMessage, verifyMessage } = require('../encrypt')
 const logger = require('./clientLogging')
-const {messageSeen} = require('./messageTracker')
+const { messageSeen } = require('./messageTracker')
+const { proposalResolvedWithAcceptance } = require('./proposalHelper')
 
 const consumerProposalHandler = async (proposal, proposals, keys) => {
     //If you have not processed the message
@@ -13,8 +14,8 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
             return
         }
         if (proposals.get(proposal.body.requestId)) {
-             logger.warn('A proposal with that requestId already exists.')
-             return
+            logger.warn('A proposal with that requestId already exists.')
+            return
         }
         proposal.counterOffers = []
         proposal.acceptances = []
@@ -97,22 +98,6 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-const proposalResolvedWithAcceptance = (proposal) => {
-    if (!(proposal && proposal.resolution)) {
-        return false
-    }
-    let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
-        }
-    }
-    if (!acceptance) {
-        return false
-    }
-    return true
-}
-
 const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
     try {
         let fulfillmentMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -178,7 +163,7 @@ const consumerAdjudicationHandler = async (peerMessage, adjudications, keys) => 
         if (!adjudicationMessage) {
             return
         }
-        if(!adjudications.get(adjudicationMessage.body.requestId)) {
+        if (!adjudications.get(adjudicationMessage.body.requestId)) {
             adjudications.set(adjudicationMessage.body.requestId, [])
         }
         adjudications.get(adjudicationMessage.body.requestId).push(adjudicationMessage)

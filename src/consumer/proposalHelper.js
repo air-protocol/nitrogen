@@ -33,4 +33,17 @@ const getResolvedAcceptance = (requestId, proposals) => {
     return { proposal, acceptance }
 }
 
-module.exports = { getKeyFromPreviousHash, getResolvedAcceptance }
+const proposalResolvedWithAcceptance = (proposal) => {
+    if (!(proposal && proposal.resolution)) {
+        return false
+    }
+    let acceptance = undefined
+    for (i = 0; i < proposal.acceptances.length; i++) {
+        if (proposal.acceptances[i].body.takerId === proposal.resolution.body.takerId) {
+            return true
+        }
+    }
+    return false
+}
+
+module.exports = { getKeyFromPreviousHash, getResolvedAcceptance, proposalResolvedWithAcceptance }
