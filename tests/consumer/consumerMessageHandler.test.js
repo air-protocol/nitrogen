@@ -757,7 +757,7 @@ test('consumerSettlementInitiated adds to data model', async () => {
     expect(proposal.settlementInitiated).toBe(decryptedMessage)
 })
 
-test('consumerFinalDisburesHandler rejects bad signatures', async () => {
+test('consumerFinalDisburseHandler rejects bad signatures', async () => {
     //Assemble
     verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(false) }))
     messageSeen.mockReturnValue(false)
@@ -790,4 +790,94 @@ test('consumerFinalDisburesHandler rejects bad signatures', async () => {
     //Assert
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound disbursed: Error: Couldn't verify message signature")
+})
+
+test('consumerFinalDisburseHandler rejects proposals that did not resolve with an acceptance', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+    proposalResolvedWithAcceptance.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'acceptances': [],
+        'fulfillments': []
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+
+    //Action
+    await consumerFinalDisburseHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("unable to locate proposal that resolved with acceptance for inbound disbursed")
+    expect(proposal.disbursed).toBe(undefined)
+})
+
+test('consumerFinalDisburse adds to data model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+    proposalResolvedWithAcceptance.mockReturnValue(true)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const acceptance = {
+        'uuid': 'someid',
+        'body': {
+            'takerId': 'ricky',
+            'makerId': 'lucy'
+        }
+    }
+    const resoluntion = {
+        'uuid': 'someid',
+        'body': {
+            'takerId': 'ricky',
+            'makerId': 'lucy'
+        }
+    }
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'makerId': 'lucy'
+        },
+        'acceptances': [acceptance],
+        'fulfillments': [],
+        'resolution': resoluntion
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+
+    //Action
+    await consumerFinalDisburseHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(proposal.disbursed).toBe(decryptedMessage)
 })
