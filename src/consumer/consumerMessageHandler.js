@@ -123,9 +123,6 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
             return
         }
         let proposal = proposals.get(settlementInitiatedMessage.body.requestId)
-        if (!settlementInitiatedMessage) {
-            return
-        }
         if (!proposalResolvedWithAcceptance(proposal)) {
             logger.warn("unable to locate proposal that resolved with acceptance for inbound settlementInitiated")
             return
@@ -143,10 +140,6 @@ const consumerFinalDisburseHandler = async (peerMessage, proposals, keys) => {
             return
         }
         let proposal = proposals.get(finalDisbursedMessage.body.requestId)
-        if (!proposal) {
-            logger.warn("unable to locate proposal for inbound disbursed")
-            return
-        }
         if (!proposalResolvedWithAcceptance(proposal)) {
             logger.warn("unable to locate proposal that resolved with acceptance for inbound disbursed")
             return
