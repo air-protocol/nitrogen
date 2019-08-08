@@ -16,7 +16,8 @@ const { consumerProposalHandler,
     consumerAddMeHandler,
     consumerCounterOfferHandler,
     consumerAcceptHandler,
-    consumerFulfillmentHandler } = require('../../src/consumer/consumerMessageHandler')
+    consumerFulfillmentHandler,
+    consumerSettlementInitiatedHandler } = require('../../src/consumer/consumerMessageHandler')
 
 let publicKey = Buffer.from('public', 'hex')
 let privateKey = Buffer.from('private', 'hex')
@@ -628,4 +629,39 @@ test('consumerFulfillmentHandler adds to data model', async () => {
     //Assert
     expect(proposal.fulfillments.length).toEqual(1)
     expect(proposal.fulfillments[0]).toBe(decryptedMessage)
+})
+
+test('consumerSettlementInitiatedHandler rejects bad signatures', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(false) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        },
+        'acceptances': []
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+
+    //Action
+    await consumerSettlementInitiatedHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound settlementInitiated: Error: Couldn't verify message signature")
 })
