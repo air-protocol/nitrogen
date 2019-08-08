@@ -184,9 +184,6 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
             return
         }
         let proposal = proposals.get(signatureRequiredMessage.body.requestId)
-        if (!signatureRequiredMessage) {
-            return
-        }
         if (!proposalResolvedWithAcceptance(proposal)) {
             logger.warn("unable to locate proposal that resolved with acceptance for inbound signatureRequired")
             return
