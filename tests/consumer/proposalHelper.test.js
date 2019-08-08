@@ -98,3 +98,39 @@ test('proposalResolvedWithAcceptance returns false when no acceptance taken', ()
     //Assert
     expect(result).toBeFalsy()
 })
+
+test('proposalResolvedWithAcceptance returns false for non-existent proposal', () => {
+    //Assemble
+
+    //Action
+    const result = proposalResolvedWithAcceptance(undefined)
+
+    //Assert
+    expect(result).toBeFalsy()
+})
+
+test('proposalResolvedWithAcceptance returns false when no resolution', () => {
+    //Assemble
+    const acceptance = {
+        'uuid': 'someid',
+        'body': {
+            'takerId': 'ricky',
+            'makerId': 'lucy'
+        }
+    }
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'makerId': 'lucy'
+        },
+        'acceptances': [acceptance],
+        'resolution': undefined
+    }
+
+    //Action
+    const result = proposalResolvedWithAcceptance(proposal)
+
+    //Assert
+    expect(result).toBeFalsy()
+})
