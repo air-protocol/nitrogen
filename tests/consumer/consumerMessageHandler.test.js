@@ -19,7 +19,8 @@ const { consumerProposalHandler,
     consumerFulfillmentHandler,
     consumerSettlementInitiatedHandler,
     consumerFinalDisburseHandler,
-    consumerAdjudicationHandler } = require('../../src/consumer/consumerMessageHandler')
+    consumerAdjudicationHandler,
+    consumerRulingHandler } = require('../../src/consumer/consumerMessageHandler')
 
 let publicKey = Buffer.from('public', 'hex')
 let privateKey = Buffer.from('private', 'hex')
@@ -940,4 +941,55 @@ test('consumerAdjudicaitonHandler adds to model', async () => {
     //Assert
     expect(adjudicationsForProposal.length).toEqual(1)
     expect(adjudicationsForProposal[0]).toBe(decryptedMessage)
+})
+
+test('consumerRulingHandler rejects bad signatures', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(false) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const rulings = new Map()
+
+    //Action
+    await consumerRulingHandler(peerMessage, rulings, keys)
+
+    //Assert
+    expect(logger.warn).toBeCalled()
+    expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound ruling: Error: Couldn't verify message signature")
+})
+
+test('consumerRulingHandler adds to model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const rulings = new Map()
+
+    //Action
+    await consumerRulingHandler(peerMessage, rulings, keys)
+
+    //Assert
+    expect(rulings.get('abc123')).toBe(decryptedMessage)
 })
