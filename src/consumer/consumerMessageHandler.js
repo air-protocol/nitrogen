@@ -56,10 +56,10 @@ const consumerAddMeHandler = (peerMessage) => {
 const negotiationMessageProcessor = async (peerMessage, keys) => {
     let processedPeerMessage = undefined
     if (!messageSeen(peerMessage.uuid) && (keys.publicKey.toString('hex') === peerMessage.recipientKey)) {
-        if (! await verifyMessage(peerMessage)) {
+        processedPeerMessage = await decryptMessage(peerMessage, keys.privateKey)
+        if (! await verifyMessage(processedPeerMessage)) {
             throw new Error("Couldn't verify message signature")
         }
-        processedPeerMessage = await decryptMessage(peerMessage, keys.privateKey)
     }
     return processedPeerMessage
 }
