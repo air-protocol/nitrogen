@@ -912,3 +912,32 @@ test('consumerAdjudicaitonHandler rejects bad signatures', async () => {
     expect(logger.warn).toBeCalled()
     expect(logger.warn.mock.calls[0][0]).toMatch("unable to process inbound adjudication: Error: Couldn't verify message signature")
 })
+
+test('consumerAdjudicaitonHandler adds to model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+
+    const adjudications = new Map()
+    const adjudicationsForProposal = []
+    adjudications.set('abc123', adjudicationsForProposal)
+
+    //Action
+    await consumerAdjudicationHandler(peerMessage, adjudications, keys)
+
+    //Assert
+    expect(adjudicationsForProposal.length).toEqual(1)
+    expect(adjudicationsForProposal[0]).toBe(decryptedMessage)
+})
