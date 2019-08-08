@@ -1067,3 +1067,54 @@ test('consumerSignatureRequired rejects proposals that did not resolve with an a
     expect(logger.warn.mock.calls[0][0]).toMatch("unable to locate proposal that resolved with acceptance for inbound signatureRequired")
     expect(proposal.signatureRequired).toBe(undefined)
 })
+
+test('consumerSignatureRequired adds to data model', async () => {
+    //Assemble
+    verifyMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(true) }))
+    messageSeen.mockReturnValue(false)
+    proposalResolvedWithAcceptance.mockReturnValue(true)
+
+    const peerMessage = {
+        'recipientKey': keys.publicKey.toString('hex'),
+        'uuid': 'someid',
+        'body': {
+            'requestId': 'abc123'
+        }
+    }
+
+    const decryptedMessage = JSON.parse(JSON.stringify(peerMessage))
+    decryptMessage.mockReturnValue(decryptedMessage)
+
+    const acceptance = {
+        'uuid': 'someid',
+        'body': {
+            'takerId': 'ricky',
+            'makerId': 'lucy'
+        }
+    }
+    const resoluntion = {
+        'uuid': 'someid',
+        'body': {
+            'takerId': 'ricky',
+            'makerId': 'lucy'
+        }
+    }
+
+    const proposal = {
+        'uuid': 'someid',
+        'body': {
+            'makerId': 'lucy'
+        },
+        'acceptances': [acceptance],
+        'fulfillments': [],
+        'resolution': resoluntion
+    }
+    const proposals = new Map()
+    proposals.set('abc123', proposal)
+
+    //Action
+    await consumerSignatureRequiredHandler(peerMessage, proposals, keys)
+
+    //Assert
+    expect(proposal.signatureRequired).toBe(decryptedMessage)
+})
