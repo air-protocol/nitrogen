@@ -3,8 +3,8 @@ const fetch = require('node-fetch')
 const logger = require('./clientLogging')
 const hostConfiguration = require('../config/config')
 
-//TODO remove for production
-stellar.Network.useTestNetwork()
+//uncomment for test network
+//stellar.Network.useTestNetwork()
 
 const platformFees = 10
 
