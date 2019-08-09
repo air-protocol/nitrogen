@@ -1,23 +1,11 @@
 const localCache = require('../cache')
-const hostConfiguration = require('../config/config')
+const config = require('../config/config')
 const { decryptMessage, verifyMessage } = require('../encrypt')
-const logger = require('../logging')
+const logger = require('./clientLogging')
+const { messageSeen } = require('./messageTracker')
+const { proposalResolvedWithAcceptance } = require('./proposalHelper')
 
-const consumerId = hostConfiguration.consumerId
-let messageUUIDs = []
-
-const messageSeen = (messageUUID) => {
-    if (!messageUUIDs.includes(messageUUID)) {
-        if (messageUUIDs.length >= hostConfiguration.maxMessageStore) {
-            messageUUIDs.shift()
-        }
-        messageUUIDs.push(messageUUID)
-        return false
-    }
-    return true
-}
-
-const consumerProposalHandler = async (proposal, proposals, adjudications, keys) => {
+const consumerProposalHandler = async (proposal, proposals, keys) => {
     //If you have not processed the message
     //and it is from another party (your key !== message key)
     if ((!messageSeen(proposal.uuid)) && (keys.publicKey.toString('hex') !== proposal.publicKey)) {
@@ -26,8 +14,8 @@ const consumerProposalHandler = async (proposal, proposals, adjudications, keys)
             return
         }
         if (proposals.get(proposal.body.requestId)) {
-             logger.warn('A proposal with that requestId already exists.')
-             return
+            logger.warn('A proposal with that requestId already exists.')
+            return
         }
         proposal.counterOffers = []
         proposal.acceptances = []
@@ -42,7 +30,7 @@ const consumerProposalResolvedHandler = async (resolution, proposals) => {
             logger.warn("Couldn't verify message signature on inbound proposal resolution")
             return
         }
-        if ((resolution.body.makerId != consumerId) && (resolution.body.takerId != consumerId)) {
+        if ((resolution.body.makerId !== config.consumerId) && (resolution.body.takerId !== config.consumerId)) {
             proposals.delete(resolution.body.requestId)
         } else {
             let proposal = proposals.get(resolution.body.requestId)
@@ -69,7 +57,7 @@ const negotiationMessageProcessor = async (peerMessage, keys) => {
     let processedPeerMessage = undefined
     if (!messageSeen(peerMessage.uuid) && (keys.publicKey.toString('hex') === peerMessage.recipientKey)) {
         processedPeerMessage = await decryptMessage(peerMessage, keys.privateKey)
-        if (! await verifyMessage(peerMessage)) {
+        if (! await verifyMessage(processedPeerMessage)) {
             throw new Error("Couldn't verify message signature")
         }
     }
@@ -110,22 +98,6 @@ const consumerAcceptHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
-const proposalResolvedWithAcceptance = (proposal) => {
-    if (!(proposal && proposal.resolution)) {
-        return false
-    }
-    let acceptance = undefined
-    for (i = 0; i < proposal.acceptances.length; i++) {
-        if (proposal.acceptances[i].takerId === proposal.resolution.takerId) {
-            acceptance = proposal.acceptances[i]
-        }
-    }
-    if (!acceptance) {
-        return false
-    }
-    return true
-}
-
 const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
     try {
         let fulfillmentMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -151,9 +123,6 @@ const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) 
             return
         }
         let proposal = proposals.get(settlementInitiatedMessage.body.requestId)
-        if (!settlementInitiatedMessage) {
-            return
-        }
         if (!proposalResolvedWithAcceptance(proposal)) {
             logger.warn("unable to locate proposal that resolved with acceptance for inbound settlementInitiated")
             return
@@ -171,10 +140,6 @@ const consumerFinalDisburseHandler = async (peerMessage, proposals, keys) => {
             return
         }
         let proposal = proposals.get(finalDisbursedMessage.body.requestId)
-        if (!proposal) {
-            logger.warn("unable to locate proposal for inbound disbursed")
-            return
-        }
         if (!proposalResolvedWithAcceptance(proposal)) {
             logger.warn("unable to locate proposal that resolved with acceptance for inbound disbursed")
             return
@@ -191,7 +156,7 @@ const consumerAdjudicationHandler = async (peerMessage, adjudications, keys) => 
         if (!adjudicationMessage) {
             return
         }
-        if(!adjudications.get(adjudicationMessage.body.requestId)) {
+        if (!adjudications.get(adjudicationMessage.body.requestId)) {
             adjudications.set(adjudicationMessage.body.requestId, [])
         }
         adjudications.get(adjudicationMessage.body.requestId).push(adjudicationMessage)
@@ -219,9 +184,6 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
             return
         }
         let proposal = proposals.get(signatureRequiredMessage.body.requestId)
-        if (!signatureRequiredMessage) {
-            return
-        }
         if (!proposalResolvedWithAcceptance(proposal)) {
             logger.warn("unable to locate proposal that resolved with acceptance for inbound signatureRequired")
             return

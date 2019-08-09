@@ -12,11 +12,11 @@ const hostConfig = {
     maxMessageStore: argv.maxMessageStore || 5000,
     addMeTTL: argv.addMeTTL || 500,
     addMeTTLBound: argv.addMeTTLBound,
-    juryKey: argv.juryKey || 'GDIAIGUHDGMTDLKC6KFU2DIR7JVNYI4WFQ5TWTVKEHZ4G3T47HEFNUME',
+    juryKey: argv.juryKey || 'GC3WNG5LCMMGD5SSTT35ZR6RWNEXJ6KWYG3CYFLPRCRALNQLMWRXGYXU',
     juryMeshPublicKey: '044a68235838f9a58de9caf1ef2c678bf2c9338da35affa33a978116c8a4de94f73850b15623fd44b8811b14faef1850b43ad819e8a4e80d75c3e4c276e3ce00b6',
     consumerId: argv.consumerId,
     meshPublicKey: argv.meshPublicKey,
     meshPrivateKey: argv.meshPrivateKey,
-    platformKey: 'GCFEOK477RXJZYDV642BRMBV43FO4NTMKROEXZHW45FQ7DW6XWTAUFVM'
+    platformKey: 'GD5PN7AE3UP43LAVO7V5RQZNTCQWH23LVTA5WROE25RVF5FIMVUVQIEF'
 }
 module.exports = hostConfig

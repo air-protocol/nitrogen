@@ -13,7 +13,7 @@ const { initiateSettlement, createBuyerDisburseTransaction, createFavorBuyerTran
 //Assemble
 const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
 const buyerPublic = 'GAMCL7NNPCQQRUPZTFCSYGU36E7HVS53IWWHFPHMHD26HXIJEKKMM7Y3'
-const platformPublic = 'GCFEOK477RXJZYDV642BRMBV43FO4NTMKROEXZHW45FQ7DW6XWTAUFVM'
+const platformPublic = 'GD5PN7AE3UP43LAVO7V5RQZNTCQWH23LVTA5WROE25RVF5FIMVUVQIEF'
 const escrowSecret = 'SDQLRJVYLL2CUKXYPS3OSL6HPXKN2F47HTWRIRYCJJUUIJIKBVFQKTSV'
 const escrowPublic = 'GAQK62EZBRINSGVCWRKOTYTK3JOLKODYLI223OMPOYOHPOXHW66XG3KQ'
 const jurySecret = 'SC5LFR4I5NEYXAWIPUD5C5NWLIK65BLG2DYRWHIBP7JMVQ3D3BIUU46J'
@@ -103,7 +103,8 @@ test('initiateSettlement creates funded escrow', async () => {
     //Challenge stake is 10
     //Native amount paid is 200
     //Base is 3
-    expect(transaction.operations[0].startingBalance).toEqual('223.0000000')
+    //Platform is 1
+    expect(transaction.operations[0].startingBalance).toEqual('214.0000000')
 })
 
 test('initiateSettlement configures escrow', async () => {
@@ -144,7 +145,7 @@ test('createBuyerDisburseTransactionDoes', async() => {
     expect(transaction.operations[0].amount).toEqual('100.0000000')
     expect(transaction.operations[1].type).toEqual('payment')
     expect(transaction.operations[1].destination).toEqual(platformPublic)
-    expect(transaction.operations[1].amount).toEqual('10.0000000')
+    expect(transaction.operations[1].amount).toEqual('1.0000000')
     expect(transaction.operations[2].type).toEqual('accountMerge')
     expect(transaction.operations[2].destination).toEqual(buyerPublic)
     expect(transaction.source).toEqual(escrowPublic)
@@ -165,7 +166,7 @@ test('createFavorBuyerTransactionDoes', async() => {
     expect(transaction.operations[0].amount).toEqual('10.0000000')
     expect(transaction.operations[1].type).toEqual('payment')
     expect(transaction.operations[1].destination).toEqual(platformPublic)
-    expect(transaction.operations[1].amount).toEqual('10.0000000')
+    expect(transaction.operations[1].amount).toEqual('1.0000000')
     expect(transaction.operations[2].type).toEqual('accountMerge')
     expect(transaction.operations[2].destination).toEqual(buyerPublic)
     expect(transaction.source).toEqual(escrowPublic)
@@ -186,7 +187,7 @@ test('createFavorSellerTransactionDoes', async() => {
     expect(transaction.operations[0].amount).toEqual('10.0000000')
     expect(transaction.operations[1].type).toEqual('payment')
     expect(transaction.operations[1].destination).toEqual(platformPublic)
-    expect(transaction.operations[1].amount).toEqual('10.0000000')
+    expect(transaction.operations[1].amount).toEqual('1.0000000')
     expect(transaction.operations[2].type).toEqual('payment')
     expect(transaction.operations[2].destination).toEqual(sellerPublic)
     expect(transaction.operations[2].amount).toEqual('200.0000000')

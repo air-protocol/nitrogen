@@ -33,6 +33,7 @@ const pingHandler = (peerMessage) => {
 const proposalHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard proposal uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard proposal hash: ' + peerMessage.hash)
         serverSocket.emit('proposal', peerMessage)
         return true
     }
@@ -42,6 +43,7 @@ const proposalHandler = (peerMessage) => {
 const proposalResolvedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard proposal resolved: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard proposal resolved hash: ' + peerMessage.hash)
         serverSocket.emit('resolved', peerMessage)
         return true
     }
@@ -51,6 +53,7 @@ const proposalResolvedHandler = (peerMessage) => {
 const counterOfferHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard counterOffer uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard counterOffer hash: ' + peerMessage.hash)
         serverSocket.emit('counterOffer', peerMessage)
         return true
     }
@@ -60,6 +63,7 @@ const counterOfferHandler = (peerMessage) => {
 const acceptHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard acceptance uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard acceptance hash: ' + peerMessage.hash)
         serverSocket.emit('accept', peerMessage)
         return true
     }
@@ -69,6 +73,7 @@ const acceptHandler = (peerMessage) => {
 const fulfillmentHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard fulfillment uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard fulfillment hash: ' + peerMessage.hash)
         serverSocket.emit('fulfillment', peerMessage)
         return true
     }
@@ -78,6 +83,7 @@ const fulfillmentHandler = (peerMessage) => {
 const settlementInitiatedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard settlementInitiated uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard settlementInitiated hash: ' + peerMessage.hash)
         serverSocket.emit('settlementInitiated', peerMessage)
         return true
     }
@@ -87,6 +93,7 @@ const settlementInitiatedHandler = (peerMessage) => {
 const signatureRequiredHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard signatureRequired uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard signatureRequired hash: ' + peerMessage.hash)
         serverSocket.emit('signatureRequired', peerMessage)
         return true
     }
@@ -96,6 +103,7 @@ const signatureRequiredHandler = (peerMessage) => {
 const disbursedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard disbursed uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard disbursed hash: ' + peerMessage.hash)
         serverSocket.emit('disbursed', peerMessage)
         return true
     }
@@ -105,6 +113,7 @@ const disbursedHandler = (peerMessage) => {
 const adjudicationHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard adjudication uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard adjudication hash: ' + peerMessage.hash)
         serverSocket.emit('adjudicate', peerMessage)
         return true
     }
@@ -114,6 +123,7 @@ const adjudicationHandler = (peerMessage) => {
 const rulingHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard ruling uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard ruling hash: ' + peerMessage.hash)
         serverSocket.emit('ruling', peerMessage)
         return true
     }
