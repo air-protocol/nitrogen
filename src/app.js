@@ -13,6 +13,7 @@ const { addMeHandler,
     acceptHandler,
     proposalResolvedHandler,
     fulfillmentHandler,
+    informHandler,
     settlementInitiatedHandler,
     signatureRequiredHandler,
     rulingHandler,
@@ -49,6 +50,7 @@ server.listen(hostConfiguration.port, () => {
         socket.on('accept', acceptHandler)
         socket.on('resolved', proposalResolvedHandler)
         socket.on('fulfillment', fulfillmentHandler)
+        socket.on('inform', informHandler)
         socket.on('settlementInitiated', settlementInitiatedHandler)
         socket.on('signatureRequired', signatureRequiredHandler)
         socket.on('adjudicate', adjudicationHandler)

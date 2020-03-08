@@ -1,4 +1,5 @@
-const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chain')
+const hostConfiguration = require('../config/config')
+const { transactionHistory, viewEscrow, viewTransactionOperations } = require('./chains/'+hostConfiguration.chain) //'./chain')
 const { validateAgreement } = require('./agreement')
 const chalk = require('chalk')
 
@@ -56,6 +57,9 @@ const presentViewAgreement = async (agreement) => {
             acceptance.fulfillments.forEach((fulfillment) => {
                 printFulfullment(fulfillment)
             })
+            acceptance.infomrs.forEach((inform) => {
+                printInform(inform)
+            })
             console.log('---------------------------------')
             console.log('Escrow information')
             await printEscrow(acceptance.settlementInitiated.body.escrow)
@@ -85,6 +89,8 @@ const printNegotiationMessage = (message) => {
     console.log('offer amount: ' + message.body.offerAmount)
     console.log('request asset: ' + message.body.requestAsset)
     console.log('request amount: ' + message.body.requestAmount)
+    console.log('hash:  ' + message.hash)
+
     console.log('---------------------------------')
 }
 
@@ -97,6 +103,19 @@ const printFulfullment = (fulfillment) => {
     console.log('taker id: ' + fulfillment.body.takerId)
     console.log('message: ' + fulfillment.body.message)
     console.log('fulfullment: ' + JSON.stringify(fulfillment.body.fulfillment))
+    console.log('---------------------------------')
+}
+
+const printInform = (inform) => {
+    console.log('---------------------------------')
+    console.log('Inform')
+    console.log('from public key: ' + inform.publicKey.toString('hex'))
+    console.log('request: ' + inform.body.requestId)
+    console.log('maker id: ' + inform.body.makerId)
+    console.log('taker id: ' + inform.body.takerId)
+    console.log('message: ' + inform.body.message)
+    console.log('mechanic: ' + inform.body.mechanic)
+    console.log('data: ' + JSON.stringify(inform.body.data))
     console.log('---------------------------------')
 }
 
@@ -115,6 +134,9 @@ const presentOfferHistory = (param, proposals) => {
     })
     proposal.fulfillments.forEach((fulfillment) => {
         printFulfullment(fulfillment)
+    })
+    proposal.informs.forEach((inform) => {
+        printInform(inform)
     })
     if (proposal.resolution) {
         console.log('---------------------------------')

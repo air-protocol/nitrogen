@@ -17,6 +17,7 @@ const buildMessageChain = (proposal, message) => {
         //un-flatten the model
         //settlement fields are attached to the acceptance in agreement
         proposal.fulfillments = undefined
+        proposal.informs = undefined
         proposal.settlementInitiated = undefined
         proposal.signatureRequired = undefined
 
@@ -40,6 +41,8 @@ const buildAgreement = (proposal) => {
     acceptance.settlementInitiated = copyProposal.settlementInitiated
     acceptance.signatureRequired = copyProposal.signatureRequired
     acceptance.fulfillments = copyProposal.fulfillments
+    acceptance.informs = copyProposal.informs
+
     return buildMessageChain(copyProposal, acceptance)
 }
 
@@ -85,6 +88,9 @@ const validateAgreement = async (agreement) => {
             await checkMessage(message, message.signatureRequired, report)
             for (i = 0; i < message.fulfillments.length; i++) {
                 await checkMessage(message, message.fulfillments[i], report)
+            }
+            for (i = 0; i < message.informs.length; i++) {
+                await checkMessage(message, message.informs[i], report)
             }
         }
         prior = message

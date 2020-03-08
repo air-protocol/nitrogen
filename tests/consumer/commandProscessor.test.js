@@ -1,4 +1,4 @@
-jest.mock('../../src/consumer/chain')
+jest.mock('../../src/consumer/chains/stellar')
 jest.mock('../../src/config/config')
 jest.mock('../../src/encrypt')
 jest.mock('../../src/consumer/consumerPeer')
@@ -6,7 +6,7 @@ jest.mock('../../src/consumer/agreement')
 jest.mock('../../src/consumer/proposalHelper')
 
 const agreement = require('../../src/consumer/agreement')
-const chain = require('../../src/consumer/chain')
+const chain = require('../../src/consumer/chains/stellar')
 const config = require('../../src/config/config')
 const encrypt = require('../../src/encrypt')
 const consumerPeer = require('../../src/consumer/consumerPeer')
@@ -489,7 +489,7 @@ test('processProposalResolved does', async () => {
     const mockSignedMessage = {}
     encrypt.signMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(mockSignedMessage) }))
 
-    //Action 
+    //Action
     await processProposalResolved(param, proposals, keys)
 
     //Assert
@@ -579,7 +579,7 @@ test('processAcceptProposal does', async () => {
     const encryptedAcceptMessage = {}
     encrypt.encryptMessage.mockReturnValue(new Promise((resolve, reject) => { resolve(encryptedAcceptMessage) }))
 
-    //Action 
+    //Action
     await processAcceptProposal(param, proposals, keys)
 
     //Assert

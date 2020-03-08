@@ -41,4 +41,10 @@ const verifyHash = (message) => {
     return message.hash === hashed.toString('hex')
 }
 
-module.exports = { createKeys, decryptMessage, encryptMessage, signMessage, verifyMessage, verifyHash }
+const randomHash = () =>{
+    var current_date = (new Date()).valueOf().toString();
+    var random = Math.random().toString();
+    return crypto.createHash('sha1').update(current_date + random).digest('hex').toString('hex');
+}
+
+module.exports = { createKeys, decryptMessage, encryptMessage, signMessage, verifyMessage, verifyHash, randomHash }

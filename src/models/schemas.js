@@ -116,4 +116,26 @@ const rulingSchema = {
     }
 }
 
-module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema }
+const informSchema = {
+    "properties": {
+        "makerId": { "type": "string" },
+        "takerId": { "type": "string" },
+        "message": { "type": "string" },
+        "requestId": { "type": "string" },
+        "mechanic": { "type": "string" },  //to signal what the info is for example "TSS"
+        "data": { "type": "object" }, //Mechanic specific data fields
+        "previousHash": { "type": "object" },
+        "timeStamp": {"type": "string"}
+    }
+}
+
+const tssDataSchema = {
+    "propoerties": {
+        "parties"   :   { "type": "number"},
+        "threshold" :   { "type": "number"},
+        "channel"   :   { "type": "string"},
+        "password"  :   { "type": "string"},
+    }
+}
+
+module.exports = { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema, informSchema, tssDataSchema }

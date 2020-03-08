@@ -1,7 +1,8 @@
+
 const stellar = require('stellar-sdk')
 const fetch = require('node-fetch')
-const logger = require('./clientLogging')
-const hostConfiguration = require('../config/config')
+const logger = require('../clientLogging')
+const hostConfiguration = require('../../config/config')
 
 //uncomment for test network
 //stellar.Network.useTestNetwork()
@@ -102,7 +103,7 @@ const viewEscrow = async (accountId) => {
     return server.accounts().accountId(accountId).call()
 }
 
-const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount) => {
+const initiateSettlement = async (secret, sellerKey, juryKey, challengeStake, nativeAmount, proposal) => {
     const server = new stellar.Server('https://horizon.stellar.org')
 
     const buyerPair = stellar.Keypair.fromSecret(secret)

@@ -1,10 +1,10 @@
-const { encryptMessage, signMessage } = require('../encrypt')
+const hostConfiguration = require('../config/config')
+const { randomHash, encryptMessage, signMessage } = require('../encrypt')
 const { buildMessage, sendMessage } = require('./consumerPeer')
 const { buildAgreement, pullValuesFromAgreement, validateAgreement } = require('./agreement')
-const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema } = require('../models/schemas')
-const { initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chain')
+const { adjudicateSchema, proposalSchema, negotiationSchema, proposalResolvedSchema, fulfillmentSchema, settlementInitiatedSchema, signatureRequiredSchema, rulingSchema, disbursedSchema, informSchema, tssDataSchema } = require('../models/schemas')
+const { tssKeyGen, initEscrow, createChannel, initiateSettlement, createBuyerDisburseTransaction, submitDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('./chains/'+hostConfiguration.chain) //'./chain')
 const { getKeyFromPreviousHash, getResolvedAcceptance } = require('./proposalHelper')
-const hostConfiguration = require('../config/config')
 
 const processProposal = async (param, proposals, keys) => {
     let proposalBody = JSON.parse(param)
@@ -18,6 +18,7 @@ const processProposal = async (param, proposals, keys) => {
     proposal.counterOffers = []
     proposal.acceptances = []
     proposal.fulfillments = []
+    proposal.informs = []
     proposals.set(proposal.body.requestId, proposal)
 }
 
@@ -107,7 +108,9 @@ const processBuyerInitiatedDisburse = async (secret, sellerKey, recipientKey, am
         sellerKey,
         acceptance.body.challengeStake,
         amount,
-        proposal.settlementInitiated.body.escrow)
+        proposal.settlementInitiated.body.escrow,
+        proposal,
+        keys)
 
     let signatureRequiredBody = {}
     signatureRequiredBody.makerId = acceptance.body.makerId
@@ -175,7 +178,7 @@ const processDisburse = async (param, proposals, adjudications, rulings, keys) =
         if (ruling) {
             if (ruling.body.transaction) {
                 //If there is a transaction on your copy of the ruling it means the jury ruled in your favor
-                submitDisburseTransaction(disbursementBody.secret, ruling.body.transaction)
+                submitDisburseTransaction(disbursementBody.secret, ruling.body.transaction, proposal, keys)
                 sendFinalDisburseMessage(proposal, acceptance, keys, recipientKey)
             } else {
                 throw new Error('jury did not rule in your favor')
@@ -192,7 +195,7 @@ const processDisburse = async (param, proposals, adjudications, rulings, keys) =
     } else {
         //Seller is signing and collecting
         if (proposal.signatureRequired) {
-            submitDisburseTransaction(disbursementBody.secret, proposal.signatureRequired.body.transaction)
+            submitDisburseTransaction(disbursementBody.secret, proposal.signatureRequired.body.transaction, proposal, keys)
             sendFinalDisburseMessage(proposal, acceptance, keys, recipientKey)
         } else {
             throw new Error('The party purchasing with lumens must initiate disbursement')
@@ -228,6 +231,61 @@ const processFulfillment = async (param, proposals, keys) => {
     }
 }
 
+const processInform = async (param, proposals, keys) => {
+    //previous hash is of acceptance
+    let informBody = JSON.parse(param)
+    let { proposal, acceptance } = getResolvedAcceptance(informBody.requestId, proposals)
+    let recipientKey
+    let myKey = keys.publicKey.toString('hex')
+    if (myKey !== acceptance.publicKey) {
+        recipientKey = acceptance.publicKey
+    } else {
+        recipientKey = getKeyFromPreviousHash(acceptance.body.previousHash, proposal)
+    }
+    if (!recipientKey) {
+        throw new Error('Unable to match up hashes')
+    }
+
+    let channelId = await createChannel(1440)
+    let channelPass = randomHash()
+
+    informBody.data.channel = channelId
+    informBody.data.password = channelPass
+
+    // var informData = JSON.parse(informBody.data)
+    // informData.channel = createChannel
+    // informData.password = channelPass
+    //
+    // informBody.data = informData
+
+    try {
+        let message = buildMessage(informBody, keys, informSchema, recipientKey)
+        message = await signMessage(message, keys)
+
+        let copyMessage = JSON.parse(JSON.stringify(message))
+
+        message = await encryptMessage(message, recipientKey)
+        sendMessage('inform', message)
+
+        let juryMessage = buildMessage(informBody, keys, informSchema, hostConfiguration.juryMeshPublicKey)
+        juryMessage = await signMessage(juryMessage, keys)
+
+        juryMessage = await encryptMessage(juryMessage, Buffer.from(hostConfiguration.juryMeshPublicKey, 'hex'))
+        sendMessage('inform', juryMessage)
+
+        let successInit = await initEscrow(informBody.requestId, keys)
+        let escrowAddress = await tssKeyGen(informBody.requestId, informBody.data.parties, informBody.data.password, informBody.data.channel, informBody.data.threshold, keys)
+
+        copyMessage.body.data.escrow = escrowAddress
+
+        proposal.informs.push(copyMessage)
+
+
+    } catch (e) {
+        throw new Error('unable to sign and encrypt: ' + e)
+    }
+}
+
 const processAcceptProposal = async (param, proposals, keys) => {
     let acceptBody = JSON.parse(param)
     let proposal = proposals.get(acceptBody.requestId)
@@ -248,12 +306,12 @@ const processSettleProposal = async (param, proposals, keys) => {
         if (hostConfiguration.consumerId !== proposal.body.makerId) {
             throw new Error('only party buying with lumens can initiate settlement')
         }
-        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount)
+        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.takerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.offerAmount, proposal)
     } else {
         if (hostConfiguration.consumerId !== acceptance.body.takerId) {
             throw new Error('only party buying with lumens can initiate settlement')
         }
-        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount)
+        escrowPair = await initiateSettlement(settlement.secret, acceptance.body.makerId, hostConfiguration.juryKey, acceptance.body.challengeStake, acceptance.body.requestAmount, proposal)
     }
     let recipientKey
     let myKey = keys.publicKey.toString('hex')
@@ -354,9 +412,9 @@ const processRuling = async (param, adjudications, rulings, keys) => {
     let sellerMessage = buildMessage(sellerRulingBody, keys, rulingSchema, sellerMeshKey)
 
     if (ruling.favor === 'buyer') {
-        buyerMessage.body.transaction = await createFavorBuyerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, challengeStake)
+        buyerMessage.body.transaction = await createFavorBuyerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, challengeStake, agreement, keys)
     } else {
-        sellerMessage.body.transaction = await createFavorSellerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount)
+        sellerMessage.body.transaction = await createFavorSellerTransaction(ruling.secret, escrowStellarKey, buyerStellarKey, sellerStellarKey, challengeStake, nativeAmount, agreement, keys)
     }
     buyerMessage = await signMessage(buyerMessage, keys)
     sellerMessage = await signMessage(sellerMessage, keys)
@@ -377,4 +435,4 @@ const processRuling = async (param, adjudications, rulings, keys) => {
     rulings.set(requestId, copyMessage)
 }
 
-module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling, processValidateAgreement, processViewAgreement }
+module.exports = { processCounterOffer, processProposal, processAcceptProposal, processAdjudication, processProposalResolved, processSettleProposal, processFulfillment, processDisburse, processRuling, processValidateAgreement, processViewAgreement, processInform}

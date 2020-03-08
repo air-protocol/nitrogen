@@ -4,6 +4,8 @@ const { decryptMessage, verifyMessage } = require('../encrypt')
 const logger = require('./clientLogging')
 const { messageSeen } = require('./messageTracker')
 const { proposalResolvedWithAcceptance } = require('./proposalHelper')
+const { initEscrow, tssKeyGen } = require('./chains/'+config.chain)
+
 
 const consumerProposalHandler = async (proposal, proposals, keys) => {
     //If you have not processed the message
@@ -20,6 +22,7 @@ const consumerProposalHandler = async (proposal, proposals, keys) => {
         proposal.counterOffers = []
         proposal.acceptances = []
         proposal.fulfillments = []
+        proposal.informs = []
         proposals.set(proposal.body.requestId, proposal)
     }
 }
@@ -30,7 +33,7 @@ const consumerProposalResolvedHandler = async (resolution, proposals) => {
             logger.warn("Couldn't verify message signature on inbound proposal resolution")
             return
         }
-        if ((resolution.body.makerId !== config.consumerId) && (resolution.body.takerId !== config.consumerId)) {
+        if ((resolution.body.makerId !== config.consumerId) && (resolution.body.takerId !== config.consumerId) && (config.mode !==  'jury')) {
             proposals.delete(resolution.body.requestId)
         } else {
             let proposal = proposals.get(resolution.body.requestId)
@@ -116,6 +119,31 @@ const consumerFulfillmentHandler = async (peerMessage, proposals, keys) => {
     }
 }
 
+const consumerInformHandler = async (peerMessage, proposals, keys) => {
+    try {
+        let informMessage = await negotiationMessageProcessor(peerMessage, keys)
+        if (!informMessage) {
+            return
+        }
+        let proposal = proposals.get(informMessage.body.requestId)
+
+        if ((!proposalResolvedWithAcceptance(proposal)) && (config.mode !==  'jury')) {
+            logger.warn("unable to locate proposal that resolved with acceptance for inbound inform")
+            return
+        }
+        let successInit = await initEscrow(informMessage.body.requestId, keys)
+
+        let escrowAddress = await tssKeyGen(informMessage.body.requestId, informMessage.body.data.parties, informMessage.body.data.password, informMessage.body.data.channel, informMessage.body.data.threshold, keys)
+
+        informMessage.body.data.escrow = escrowAddress
+
+        proposal.informs.push(informMessage)
+
+    } catch (e) {
+        logger.warn("unable to process inbound inform: " + e)
+    }
+}
+
 const consumerSettlementInitiatedHandler = async (peerMessage, proposals, keys) => {
     try {
         let settlementInitiatedMessage = await negotiationMessageProcessor(peerMessage, keys)
@@ -194,4 +222,4 @@ const consumerSignatureRequiredHandler = async (peerMessage, proposals, keys) =>
     }
 }
 
-module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler, consumerRulingHandler, consumerFinalDisburseHandler }
+module.exports = { consumerAddMeHandler, consumerAdjudicationHandler, consumerCounterOfferHandler, consumerProposalHandler, consumerAcceptHandler, consumerProposalResolvedHandler, consumerFulfillmentHandler, consumerSettlementInitiatedHandler, consumerSignatureRequiredHandler, consumerRulingHandler, consumerFinalDisburseHandler, consumerInformHandler }

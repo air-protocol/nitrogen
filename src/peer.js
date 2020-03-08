@@ -8,6 +8,7 @@ const { addMeHandler,
     acceptHandler,
     proposalResolvedHandler,
     fulfillmentHandler,
+    informHandler,
     settlementInitiatedHandler,
     signatureRequiredHandler,
     rulingHandler } = require('./message')
@@ -42,6 +43,7 @@ const connectToPeer = (peerAddress, addMeUUID) => {
             peerSocket.on('accept', acceptHandler)
             peerSocket.on('resolved', proposalResolvedHandler)
             peerSocket.on('fulfillment', fulfillmentHandler)
+            peerSocket.on('inform', informHandler)
             peerSocket.on('settlementInitiated', settlementInitiatedHandler)
             peerSocket.on('signatureRequired', signatureRequiredHandler)
             peerSocket.on('adjudicate', adjudicationHandler)

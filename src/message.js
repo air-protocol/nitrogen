@@ -5,7 +5,7 @@ const logger = require('./logging')
 
 const timeStamp = new Date()
 timeStamp.toISOString()
- 
+
 let messageUUIDs = []
 
 const serverSocket = require('./server').serverSocket
@@ -80,6 +80,17 @@ const fulfillmentHandler = (peerMessage) => {
     return false
 }
 
+const informHandler = (peerMessage) => {
+    if (!messageSeen(peerMessage.uuid)) {
+        logger.info('heard inform uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
+        logger.info('heard inform hash: ' + peerMessage.hash)
+        serverSocket.emit('inform', peerMessage)
+        return true
+    }
+    return false
+}
+
+
 const settlementInitiatedHandler = (peerMessage) => {
     if (!messageSeen(peerMessage.uuid)) {
         logger.info('heard settlementInitiated uuid: ' + peerMessage.uuid + ` on ${timeStamp}`)
@@ -150,4 +161,4 @@ const addMeHandler = (peerMessage) => {
     return false
 }
 
-module.exports = { addMeHandler, adjudicationHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler, signatureRequiredHandler, rulingHandler, disbursedHandler }
+module.exports = { addMeHandler, adjudicationHandler, counterOfferHandler, pingHandler, proposalHandler, acceptHandler, proposalResolvedHandler, fulfillmentHandler, settlementInitiatedHandler, signatureRequiredHandler, rulingHandler, disbursedHandler, informHandler }
