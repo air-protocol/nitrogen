@@ -7,8 +7,7 @@ stellar.Operation = Operation
 stellar.Network = Network
 stellar.Asset = Asset
 stellar.Keypair = Keypair
-
-const { initiateSettlement, createBuyerDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('../../src/consumer/chain')
+const { initiateSettlement, createBuyerDisburseTransaction, createFavorBuyerTransaction, createFavorSellerTransaction } = require('../../src/consumer/chains/stellar')
 
 //Assemble
 const buyerSecret = 'SAQEACFGGCOY46GR5ZNVNGX53COWMEOTXEFZSM5RNBIJ4LPKHIFIDWUH'
@@ -49,7 +48,7 @@ const mockLoadAccount = jest.fn(function (accountId) {
     return new Promise((resolve, reject) => {
         if (accountId === buyerPublic) {
             resolve(buyerAccount)
-        } 
+        }
         else if (accountId === escrowPublic) {
             resolve(escrowAccount)
         }

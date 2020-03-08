@@ -89,9 +89,6 @@ const validateAgreement = async (agreement) => {
             for (i = 0; i < message.fulfillments.length; i++) {
                 await checkMessage(message, message.fulfillments[i], report)
             }
-            for (i = 0; i < message.informs.length; i++) {
-                await checkMessage(message, message.informs[i], report)
-            }
         }
         prior = message
         message = message.next
