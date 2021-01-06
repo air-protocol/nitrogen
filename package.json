@@ -13,7 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@binance-chain/javascript-sdk": "^2.16.3",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "chalk": "^2.4.2",
     "core-util-is": "^1.0.2",
     "eccrypto": "^1.1.3",
